@@ -112,3 +112,22 @@ async def getPrecipitationStats(datetime: str, latitude: float, longitude: float
 
     return await petitions(url, request)
 
+#Returns a JSON with wind(speed, direction, gusts), precipitation(last hour and last 24 hours), temperature (now, max, min), precipitation data for the given datetime, latitude, and longitude
+@app.get("/weather/{datetime}/{latitude},{longitude}")
+async def getWeatherStats(datetime: str, latitude: float, longitude: float):
+    #Creo una instancia de WeatherRequest
+    try:
+        request = WeatherRequest(
+            datetime=datetime,
+            data_type="wind_speed_10m:kmh,wind_dir_10m:d,wind_gusts_10m_1h:kmh,precip_1h:mm,precip_24h:mm,t_2m:C",
+            latitude=latitude,
+            longitude=longitude,
+            response_format="json"
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    #Construir la peticion para los datos de hoy
+    url = f"{API_URL}/{request.datetime.isoformat()}/{request.data_type}/{request.latitude},{request.longitude}/{request.response_format}"
+
+    return await petitions(url, request)
