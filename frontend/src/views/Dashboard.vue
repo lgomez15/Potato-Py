@@ -6,19 +6,33 @@
       placeholder="Escribe el nombre de la ciudad"
     />
     <button @click="fetchCoordinates">Buscar Coordenadas</button>
-    <ControlPanel 
-      v-if="latitude !== null && longitude !== null"
-      :datetime="datetime" 
-      :latitude="latitude" 
-      :longitude="longitude" 
-    />
-    <p v-if="error">{{ error }}</p>
+    
+    <!-- Mostrar mensajes de error si existen -->
+    <p v-if="error" class="error">{{ error }}</p>
+    
+    <!-- Mostrar ControlPanel y WeatherWeek si las coordenadas están disponibles -->
+    <div v-if="latitude !== null && longitude !== null">
+      <ControlPanel 
+        :datetime="datetime" 
+        :latitude="latitude" 
+        :longitude="longitude" 
+      />
+      
+      <!-- Pasar las coordenadas y datetime a WeatherWeek -->
+      <WeatherBar
+        :datetime="datetime" 
+        :latitude="latitude" 
+        :longitude="longitude" 
+        :city="cityInput"
+      />
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue';
 import ControlPanel from '../components/ControlPanel.vue'; // Ajusta la ruta
+import WeatherBar from '@/components/WeatherBar.vue';
 
 const apiKey = 'd2736c1d75667857ddcc39a3dc4651c3'; // Tu clave de API de OpenWeatherMap
 const datetime = new Date().toISOString(); // Fecha y hora actual

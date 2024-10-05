@@ -36,6 +36,18 @@ export default {
     city: {
       type: String,
       required: true
+    },
+    latitude: {
+      type: Number,
+      required: true
+    },
+    longitude: {
+      type: Number,
+      required: true
+    },
+    datetime: {
+      type: String,
+      required: true
     }
   },
   data() {
@@ -44,18 +56,33 @@ export default {
       error: null         // Manejo de errores
     };
   },
-  mounted() {
-    this.fetchWeeklyWeather(this.city);
-  },
   watch: {
     /**
-     * Observa cambios en la prop 'city' para actualizar el pronóstico semanal.
+     * Observa cambios en las props 'city', 'latitude', 'longitude' y 'datetime' para actualizar el pronóstico semanal.
      */
     city(newCity, oldCity) {
       if (newCity !== oldCity) {
-        this.fetchWeeklyWeather(newCity);
+        this.fetchWeeklyWeather();
+      }
+    },
+    latitude(newLat, oldLat) {
+      if (newLat !== oldLat) {
+        this.fetchWeeklyWeather();
+      }
+    },
+    longitude(newLon, oldLon) {
+      if (newLon !== oldLon) {
+        this.fetchWeeklyWeather();
+      }
+    },
+    datetime(newDatetime, oldDatetime) {
+      if (newDatetime !== oldDatetime) {
+        this.fetchWeeklyWeather();
       }
     }
+  },
+  mounted() {
+    this.fetchWeeklyWeather();
   },
   methods: {
     /**
@@ -70,30 +97,6 @@ export default {
     },
     
     /**
-     * Obtiene las coordenadas (latitud y longitud) de una ciudad usando el endpoint de Geocodificación del backend.
-     * @param {String} city - Nombre de la ciudad.
-     * @returns {Object} Objeto con latitud y longitud.
-     */
-    async getCoordinates(city) {
-      const apiKey = 'd2736c1d75667857ddcc39a3dc4651c3'; // Tu clave de API de OpenWeatherMap
-      const geocodingUrl = `https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(city)}&limit=1&appid=${apiKey}`;
-      
-      try {
-        const response = await axios.get(geocodingUrl);
-        if (response.data && response.data.length > 0) {
-          const { lat, lon } = response.data[0];
-          console.log('Coordenadas:', { latitude: lat, longitude: lon });
-          return { latitude: lat, longitude: lon };
-        } else {
-          throw new Error('No se encontraron coordenadas para la ciudad proporcionada.');
-        }
-      } catch (error) {
-        console.error('Error obteniendo coordenadas', error);
-        throw new Error('No se pudieron obtener las coordenadas de la ciudad.');
-      }
-    },
-    
-    /**
      * Determina el ícono del clima basado en las temperaturas máximas, mínimas y precipitación.
      * @param {Object} day - Objeto que contiene temp_max, temp_min y precipitation.
      * @returns {String} Clase de ícono de weather-icons.
@@ -105,14 +108,13 @@ export default {
       if (precipitation > 10) {
         return 'wi-rain'; // Lluvia intensa
       } else if (precipitation > 0) {
+        if (temp_min <= 0) {
+          return 'wi-snow'; // Nieve
+        }
         return 'wi-showers'; // Lluvia ligera
-      } 
-      else if (precipitation > 0 && temp_min <= 0) {
-        return 'wi-snow'; // Nieve
-      }
-      else {
+      } else {
         // Lógica basada en la temperatura
-         if (temp_max >= 25) {
+        if (temp_max >= 25) {
           return 'wi-day-sunny'; // Soleado
         } else if (temp_max >= 20 && temp_max < 25) {
           return 'wi-day-cloudy'; // Nublado
@@ -124,18 +126,14 @@ export default {
     
     /**
      * Obtiene el pronóstico del tiempo para la semana desde tu API.
-     * @param {String} city - Nombre de la ciudad.
      */
-    async fetchWeeklyWeather(city) {
+    async fetchWeeklyWeather() {
+      this.weeklyWeather = [];
+      this.error = null;
+      
       try {
-        // Obtener las coordenadas de la ciudad
-        const { latitude, longitude } = await this.getCoordinates(city);
-        
-        // Obtener la fecha y hora actual en formato ISO
-        const currentDatetime = new Date().toISOString();
-        
         // Construir la URL de tu API para el pronóstico semanal
-        const apiUrl = `http://127.0.0.1:8000/weather/week/${encodeURIComponent(currentDatetime)}/${latitude},${longitude}`;
+        const apiUrl = `http://127.0.0.1:8000/weather/week/${encodeURIComponent(this.datetime)}/${this.latitude},${this.longitude}`;
         
         // Realizar la petición a tu API
         const response = await axios.get(apiUrl);
