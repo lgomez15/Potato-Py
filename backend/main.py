@@ -147,14 +147,14 @@ async def getWeatherStats(datetime: str, latitude: float, longitude: float):
 
     return await petitions(url, request)
 
-#Returns the weather data on a week for the given datetime, data type, latitude, longitude
+#Returns the weather data for the given datetime, data type, latitude, longitude
 @app.get("/weather/week/{datetime}/{latitude},{longitude}")
-async def getWeatherWeek(datetime: str, latitude: float, longitude: float):
+async def getTemperatureWeek(datetime: str, latitude: float, longitude: float):
     #Recibo una fecha y pido los datos de la semana
     try:
         request = WeatherRequest(
             datetime=datetime,
-            data_type="wind_speed_10m:kmh,wind_dir_10m:d,wind_gusts_10m_1h:kmh,precip_1h:mm,precip_24h:mm,t_2m:C",
+            data_type="t_2m:C,t_max_2m_24h:C,t_min_2m_24h:C",
             latitude=latitude,
             longitude=longitude,
             response_format="json"
@@ -166,7 +166,7 @@ async def getWeatherWeek(datetime: str, latitude: float, longitude: float):
         raise HTTPException(status_code=400, detail=str(e))
 
     #Construir la peticion para los datos de la semana
-    url = f"{API_URL}/{request.datetime.isoformat()}--{fechaSemana.isoformat()}/{request.data_type}/{request.latitude},{request.longitude}/{request.response_format}"
+    url = f"{API_URL}/{request.datetime.isoformat()}--{fechaSemana.isoformat()}:P1D/{request.data_type}/{request.latitude},{request.longitude}/{request.response_format}"
     return await petitions(url, request)
 
 # Función para simular los datos del sensor de humedad
