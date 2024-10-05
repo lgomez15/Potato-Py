@@ -8,7 +8,7 @@ const router = createRouter({
         {
             path: "/",
             name: "home",
-            component: HomeView
+            component: Dashboard
         },
         {
             path: "/dashboard", // Nueva ruta para el Dashboard
