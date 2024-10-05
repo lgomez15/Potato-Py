@@ -9,7 +9,14 @@
     
     <!-- Mostrar mensajes de error si existen -->
     <p v-if="error" class="error">{{ error }}</p>
-    
+
+      <!-- Pasar las coordenadas y datetime a WeatherWeek -->
+          <WeatherBar
+        :datetime="datetime" 
+        :latitude="latitude" 
+        :longitude="longitude" 
+        :city="cityInput"
+      />
     <!-- Mostrar ControlPanel y WeatherWeek si las coordenadas están disponibles -->
     <div v-if="latitude !== null && longitude !== null">
       <ControlPanel 
@@ -18,13 +25,7 @@
         :longitude="longitude" 
       />
       
-      <!-- Pasar las coordenadas y datetime a WeatherWeek -->
-      <WeatherBar
-        :datetime="datetime" 
-        :latitude="latitude" 
-        :longitude="longitude" 
-        :city="cityInput"
-      />
+
     </div>
   </div>
 </template>
