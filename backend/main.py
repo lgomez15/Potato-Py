@@ -154,7 +154,7 @@ async def getTemperatureWeek(datetime: str, latitude: float, longitude: float):
     try:
         request = WeatherRequest(
             datetime=datetime,
-            data_type="t_2m:C,t_max_2m_24h:C,t_min_2m_24h:C",
+            data_type="t_2m:C,t_max_2m_24h:C,t_min_2m_24h:C,precip_24h:mm",
             latitude=latitude,
             longitude=longitude,
             response_format="json"
