@@ -5,32 +5,32 @@
     <div class="info-cards">
       <div class="info-card">
         <h2>Velocidad del Viento</h2>
-        <p>{{ weatherData.windSpeed }} km/h</p>
+        <p>{{ weatherData.windSpeed !== null ? weatherData.windSpeed + ' km/h' : '---' }}</p>
       </div>
 
       <div class="info-card">
         <h2>Dirección del Viento</h2>
-        <p>{{ weatherData.windDirection }}°</p>
+        <p>{{ weatherData.windDirection !== null ? weatherData.windDirection + '°' : '---' }}</p>
       </div>
 
       <div class="info-card">
         <h2>Ráfagas de Viento</h2>
-        <p>{{ weatherData.windGusts }} km/h</p>
+        <p>{{ weatherData.windGusts !== null ? weatherData.windGusts + ' km/h' : '---' }}</p>
       </div>
 
       <div class="info-card">
         <h2>Precipitación 1h</h2>
-        <p>{{ weatherData.precip1h }} mm</p>
+        <p>{{ weatherData.precip1h !== null ? weatherData.precip1h + ' mm' : '---' }}</p>
       </div>
 
       <div class="info-card">
         <h2>Precipitación 24h</h2>
-        <p>{{ weatherData.precip24h }} mm</p>
+        <p>{{ weatherData.precip24h !== null ? weatherData.precip24h + ' mm' : '---' }}</p>
       </div>
 
       <div class="info-card">
         <h2>Temperatura</h2>
-        <p>{{ weatherData.temperature }}°C</p>
+        <p>{{ weatherData.temperature !== null ? weatherData.temperature + '°C' : '---' }}</p>
       </div>
     </div>
 
@@ -38,13 +38,13 @@
       <h2>Humedad del Suelo</h2>
       <p v-if="loading">Cargando...</p>
       <p v-else-if="error">{{ error }}</p>
-      <p v-else>Humedad actual: {{ humidity }}%</p>
+      <p v-else>Humedad actual: {{ humidity !== null ? humidity + '%' : '---' }}</p>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, defineProps } from 'vue';
+import { ref, computed, onMounted, defineProps, watch } from 'vue';
 
 // Definición de props
 const props = defineProps({
@@ -54,11 +54,11 @@ const props = defineProps({
   },
   latitude: {
     type: Number,
-    required: true
+    required: false // No es obligatorio
   },
   longitude: {
     type: Number,
-    required: true
+    required: false // No es obligatorio
   }
 });
 
@@ -91,20 +91,29 @@ const humidityClass = computed(() => {
 
 // Función para obtener los datos del clima
 const fetchWeatherData = async () => {
+  // No hacer la solicitud si no hay coordenadas
+  if (props.latitude === null || props.longitude === null) {
+    console.warn("Coordenadas no disponibles, no se puede obtener el clima.");
+    return;
+  }
+
   try {
     const response = await fetch(`http://127.0.0.1:8000/weather/${props.datetime}/${props.latitude},${props.longitude}`);
+    
+    // Verificar si la respuesta es exitosa
     if (!response.ok) {
       throw new Error("Error al obtener datos del clima");
     }
+    
     const data = await response.json();
 
     // Asignar los valores de la respuesta a weatherData
-    weatherData.value.windSpeed = data.data.find(item => item.parameter === 'wind_speed_10m:kmh').coordinates[0].dates[0].value;
-    weatherData.value.windDirection = data.data.find(item => item.parameter === 'wind_dir_10m:d').coordinates[0].dates[0].value;
-    weatherData.value.windGusts = data.data.find(item => item.parameter === 'wind_gusts_10m_1h:kmh').coordinates[0].dates[0].value;
-    weatherData.value.precip1h = data.data.find(item => item.parameter === 'precip_1h:mm').coordinates[0].dates[0].value;
-    weatherData.value.precip24h = data.data.find(item => item.parameter === 'precip_24h:mm').coordinates[0].dates[0].value;
-    weatherData.value.temperature = data.data.find(item => item.parameter === 't_2m:C').coordinates[0].dates[0].value;
+    weatherData.value.windSpeed = data.data.find(item => item.parameter === 'wind_speed_10m:kmh')?.coordinates[0]?.dates[0]?.value || null;
+    weatherData.value.windDirection = data.data.find(item => item.parameter === 'wind_dir_10m:d')?.coordinates[0]?.dates[0]?.value || null;
+    weatherData.value.windGusts = data.data.find(item => item.parameter === 'wind_gusts_10m_1h:kmh')?.coordinates[0]?.dates[0]?.value || null;
+    weatherData.value.precip1h = data.data.find(item => item.parameter === 'precip_1h:mm')?.coordinates[0]?.dates[0]?.value || null;
+    weatherData.value.precip24h = data.data.find(item => item.parameter === 'precip_24h:mm')?.coordinates[0]?.dates[0]?.value || null;
+    weatherData.value.temperature = data.data.find(item => item.parameter === 't_2m:C')?.coordinates[0]?.dates[0]?.value || null;
 
   } catch (err) {
     console.error("Error al obtener datos del clima:", err);
@@ -116,9 +125,12 @@ const fetchWeatherData = async () => {
 const fetchHumidity = async () => {
   try {
     const response = await fetch("http://localhost:8000/humidity");
+    
+    // Verificar si la respuesta es exitosa
     if (!response.ok) {
       throw new Error("Error al obtener datos de humedad");
     }
+    
     const data = await response.json();
     humidity.value = data.humidity;
   } catch (err) {
@@ -134,6 +146,11 @@ onMounted(() => {
   fetchWeatherData();
   fetchHumidity();
   setInterval(fetchHumidity, 10000); // Actualizar cada 10 segundos
+});
+
+// Observador para los cambios en latitude y longitude
+watch(() => [props.latitude, props.longitude], ([newLatitude, newLongitude]) => {
+  fetchWeatherData(); // Llamar a fetchWeatherData cuando cambian las coordenadas
 });
 </script>
 
