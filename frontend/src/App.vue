@@ -1,11 +1,12 @@
 <script setup>
   import { RouterView } from 'vue-router';
-  import Nav from './components/Navbar.vue';
+  import InformationPanel from './components/InformationPanel.vue';
+
 </script>
 
 <template>
   <div>
-    <Nav></Nav>
+    <InformationPanel/>
     <RouterView/>
   </div>
 </template>
