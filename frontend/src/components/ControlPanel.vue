@@ -1,161 +1,231 @@
 <template>
-    <div class="control-panel">
-      <h1 class="panel-title">Control Panel</h1>
-  
-      <div class="info-cards">
-        <div class="info-card">
-          <h2>Humedad</h2>
-          <p>{{ weatherData.humidity }}%</p>
-        </div>
-  
-        <div class="info-card">
-          <h2>Temperatura</h2>
-          <p>{{ weatherData.temperature }}°C</p>
-        </div>
-  
-        <div class="info-card big-card">
-          <h2>Alertas</h2>
-          <p>{{ weatherData.alerts }}</p>
-        </div>
-  
-        <div class="info-card">
-          <h2>Recomendación</h2>
-          <p>{{ weatherData.recommendation }}</p>
-        </div>
-  
-        <div class="humidity-monitor" :class="humidityClass">
-          <h2>Humedad del Suelo</h2>
-          <p v-if="loading">Cargando...</p>
-          <p v-else-if="error">{{ error }}</p>
-          <p v-else>Humedad actual: {{ humidity }}%</p>
-        </div>
+  <div class="control-panel">
+    <h1 class="panel-title">Panel de Control</h1>
+
+    <div class="info-cards">
+      <div class="info-card">
+        <h2>Velocidad del Viento</h2>
+        <p>{{ weatherData.windSpeed !== null ? weatherData.windSpeed + ' km/h' : '---' }}</p>
+      </div>
+
+      <div class="info-card">
+        <h2>Dirección del Viento</h2>
+        <p>{{ weatherData.windDirection !== null ? weatherData.windDirection + '°' : '---' }}</p>
+      </div>
+
+      <div class="info-card">
+        <h2>Ráfagas de Viento</h2>
+        <p>{{ weatherData.windGusts !== null ? weatherData.windGusts + ' km/h' : '---' }}</p>
+      </div>
+
+      <div class="info-card">
+        <h2>Precipitación 1h</h2>
+        <p>{{ weatherData.precip1h !== null ? weatherData.precip1h + ' mm' : '---' }}</p>
+      </div>
+
+      <div class="info-card">
+        <h2>Precipitación 24h</h2>
+        <p>{{ weatherData.precip24h !== null ? weatherData.precip24h + ' mm' : '---' }}</p>
+      </div>
+
+      <div class="info-card">
+        <h2>Temperatura</h2>
+        <p>{{ weatherData.temperature !== null ? weatherData.temperature + '°C' : '---' }}</p>
       </div>
     </div>
-  </template>
-  
-  <script setup>
-  import { ref, computed, onMounted } from 'vue';
-  
-  // Datos de la información del clima
-  const weatherData = ref({
-    humidity: 65,
-    temperature: 22,
-    alerts: 'Lluvias ligeras en la tarde',
-    recommendation: 'Llevar paraguas y abrigarse bien'
-  });
-  
-  // Datos de la humedad del suelo
-  const humidity = ref(null);
-  const loading = ref(true);
-  const error = ref(null);
-  
-  // Clase para el monitor de humedad
-  const humidityClass = computed(() => {
-    if (humidity.value === null) return "";
-    if (humidity.value < 30) {
-      return "low"; // Rojo
-    } else if (humidity.value < 60) {
-      return "medium"; // Amarillo
-    } else {
-      return "high"; // Verde
-    }
-  });
-  
-  // Función para obtener la humedad
-  const fetchHumidity = async () => {
-    try {
-      const response = await fetch("http://localhost:8000/humidity");
-      if (!response.ok) {
-        throw new Error("Error al obtener datos de humedad");
-      }
-      const data = await response.json();
-      humidity.value = data.humidity;
-    } catch (err) {
-      console.error("Error al obtener la humedad:", err);
-      error.value = "No se pudo cargar la humedad.";
-    } finally {
-      loading.value = false;
-    }
-  };
-  
-  // Llamar a la función en el montaje del componente
-  onMounted(() => {
-    fetchHumidity();
-    setInterval(fetchHumidity, 10000); // Actualizar cada 10 segundos
-  });
-  </script>
-  
-  <style scoped>
-  .control-panel {
-    padding: 20px;
-    background-color: white;
-    border: 1px solid #e0e0e0;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    max-width: 1000px;
-    margin: 20px auto;
-    border-radius: 8px; /* Bordes menos redondeados */
+
+    <div class="humidity-monitor" :class="humidityClass">
+      <h2>Humedad del Suelo</h2>
+      <p v-if="loading">Cargando...</p>
+      <p v-else-if="error">{{ error }}</p>
+      <p v-else>Humedad actual: {{ humidity !== null ? humidity + '%' : '---' }}</p>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref, computed, onMounted, defineProps, watch } from 'vue';
+
+const props = defineProps({
+  datetime: {
+    type: String,
+    required: true
+  },
+  latitude: {
+    type: Number,
+    required: false
+  },
+  longitude: {
+    type: Number,
+    required: false
   }
-  
-  .panel-title {
-    font-size: 2em;
-    margin-bottom: 20px;
-    color: #333;
-    text-align: center;
+});
+
+const weatherData = ref({
+  windSpeed: null,
+  windDirection: null,
+  windGusts: null,
+  precip1h: null,
+  precip24h: null,
+  temperature: null,
+});
+
+const humidity = ref(null);
+const loading = ref(true);
+const error = ref(null);
+
+const humidityClass = computed(() => {
+  if (humidity.value === null) return "";
+  if (humidity.value < 30) return "low";
+  else if (humidity.value < 60) return "medium";
+  else return "high";
+});
+
+const fetchWeatherData = async () => {
+  if (!props.latitude || !props.longitude) return;
+
+  try {
+    const response = await fetch(`http://127.0.0.1:8000/weather/${props.datetime}/${props.latitude},${props.longitude}`);
+    if (!response.ok) throw new Error("Error al obtener datos del clima");
+    const data = await response.json();
+
+    weatherData.value.windSpeed = data.data.find(item => item.parameter === 'wind_speed_10m:kmh')?.coordinates[0]?.dates[0]?.value || null;
+    weatherData.value.windDirection = data.data.find(item => item.parameter === 'wind_dir_10m:d')?.coordinates[0]?.dates[0]?.value || null;
+    weatherData.value.windGusts = data.data.find(item => item.parameter === 'wind_gusts_10m_1h:kmh')?.coordinates[0]?.dates[0]?.value || null;
+    weatherData.value.precip1h = data.data.find(item => item.parameter === 'precip_1h:mm')?.coordinates[0]?.dates[0]?.value || null;
+    weatherData.value.precip24h = data.data.find(item => item.parameter === 'precip_24h:mm')?.coordinates[0]?.dates[0]?.value || null;
+    weatherData.value.temperature = data.data.find(item => item.parameter === 't_2m:C')?.coordinates[0]?.dates[0]?.value || null;
+
+  } catch (err) {
+    console.error("Error al obtener datos del clima:", err);
+    error.value = "No se pudo cargar los datos del clima.";
   }
-  
+};
+
+const fetchHumidity = async () => {
+  try {
+    const response = await fetch("http://localhost:8000/humidity");
+    if (!response.ok) throw new Error("Error al obtener datos de humedad");
+    const data = await response.json();
+    humidity.value = data.humidity;
+  } catch (err) {
+    console.error("Error al obtener la humedad:", err);
+    error.value = "No se pudo cargar la humedad.";
+  } finally {
+    loading.value = false;
+  }
+};
+
+onMounted(() => {
+  fetchWeatherData();
+  fetchHumidity();
+  setInterval(fetchHumidity, 10000); // Actualizar cada 10 segundos
+});
+
+watch(() => [props.latitude, props.longitude], () => {
+  fetchWeatherData();
+});
+</script>
+<style scoped>
+.control-panel {
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: #f0f4f8;
+  border-radius: 15px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.panel-title {
+  text-align: center;
+  font-size: 2.5rem;
+  color: #34495e;
+  margin-bottom: 25px;
+  letter-spacing: 1.2px;
+}
+
+.info-cards {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.info-card {
+  background: linear-gradient(135deg, #e9eff5, #f6f9fc);
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+  flex: 1 1 calc(33.33% - 20px); /* Tres columnas */
+  min-width: 200px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.info-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+}
+
+.info-card h2 {
+  font-size: 1.75rem;
+  color: #2c3e50;
+  margin-bottom: 15px;
+}
+
+.info-card p {
+  font-size: 1.2rem;
+  color: #34495e;
+}
+
+.humidity-monitor {
+  padding: 25px;
+  margin-top: 30px;
+  background-color: #eef2f7;
+  border-radius: 15px;
+  text-align: center;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  transition: background-color 0.3s ease;
+}
+
+.low {
+  background-color: #ffcccc;
+}
+
+.medium {
+  background-color: #ffffcc;
+}
+
+.high {
+  background-color: #ccffcc;
+}
+
+h2 {
+  font-size: 2rem;
+  margin-bottom: 10px;
+  color: #555;
+}
+
+p {
+  font-size: 1.2rem;
+  color: #111;
+}
+
+/* Media queries para hacer el diseño responsive */
+@media (max-width: 768px) {
   .info-cards {
-    display: flex; /* Cambiado de grid a flex */
-    flex-wrap: wrap; /* Permitir que se envuelvan las tarjetas */
-    justify-content: space-between; /* Espacio entre tarjetas */
-    gap: 20px;
+    flex-direction: column;
+    gap: 15px;
   }
-  
+
   .info-card {
-    background-color: #f9f9f9;
-    border: 1px solid #ddd;
-    border-radius: 5px; /* Bordes menos redondeados */
-    padding: 20px;
-    text-align: center;
-    width: calc(20% - 20px); /* Tamaño ajustado para ser rectangular */
-    min-width: 200px; /* Ancho mínimo para cada tarjeta */
-    transition: box-shadow 0.3s ease;
+    width: 100%;
   }
-  
-  .info-card:hover {
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+@media (min-width: 1200px) {
+  .info-card {
+    flex: 1 1 calc(25% - 20px); /* Cuatro columnas para pantallas grandes */
   }
-  
-  .humidity-monitor {
-    padding: 20px;
-    text-align: center;
-    border-radius: 5px; /* Bordes menos redondeados */
-    border: 1px solid #ddd;
-    width: calc(20% - 20px); /* Tamaño ajustado para ser rectangular */
-    min-width: 200px; /* Ancho mínimo para el monitor de humedad */
-  }
-  
-  .low {
-    background-color: #ffcccc; /* Rojo claro */
-  }
-  
-  .medium {
-    background-color: #ffffcc; /* Amarillo claro */
-  }
-  
-  .high {
-    background-color: #ccffcc; /* Verde claro */
-  }
-  
-  h2 {
-    font-size: 1.5em;
-    margin-bottom: 10px;
-    color: #555;
-  }
-  
-  p {
-    font-size: 1.2em;
-    margin: 0;
-    color: #111;
-  }
-  </style>
-  
+}
+</style>
