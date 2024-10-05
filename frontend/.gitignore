@@ -22,9 +22,17 @@ coverage
 !.vscode/extensions.json
 .idea
 *.suo
+<<<<<<< HEAD
 *.ntvs*
+=======
+.ntvs
+>>>>>>> dataAnalysis
 *.njsproj
 *.sln
 *.sw?
 
+<<<<<<< HEAD
 *.tsbuildinfo
+=======
+*.tsbuildinfo
+>>>>>>> dataAnalysis
