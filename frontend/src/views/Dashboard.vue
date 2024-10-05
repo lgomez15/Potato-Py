@@ -3,53 +3,89 @@
     <input 
       type="text" 
       v-model="cityInput" 
-      placeholder="Escribe el nombre de la ciudad"
+      @input="fetchCities" 
+      placeholder="Escribe el nombre de la ciudad" 
     />
+    <ul v-if="filteredCities.length > 0" class="suggestions">
+      <li 
+        v-for="(city, index) in filteredCities" 
+        :key="index" 
+        @click="selectCity(city)"
+      >
+        {{ city.name }}, {{ city.country }}
+      </li>
+    </ul>
     <button @click="fetchCoordinates">Buscar Coordenadas</button>
     
-    <!-- Mostrar mensajes de error si existen -->
     <p v-if="error" class="error">{{ error }}</p>
 
-      <!-- Pasar las coordenadas y datetime a WeatherWeek -->
-          <WeatherBar
-        :datetime="datetime" 
-        :latitude="latitude" 
-        :longitude="longitude" 
-        :city="cityInput"
-      />
-    <!-- Mostrar ControlPanel y WeatherWeek si las coordenadas están disponibles -->
+    <WeatherBar
+      :datetime="datetime" 
+      :latitude="latitude" 
+      :longitude="longitude" 
+      :city="selectedCity"
+    />
+    
     <div v-if="latitude !== null && longitude !== null">
       <ControlPanel 
         :datetime="datetime" 
         :latitude="latitude" 
         :longitude="longitude" 
       />
-      
-
     </div>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import ControlPanel from '../components/ControlPanel.vue'; // Ajusta la ruta
+import ControlPanel from '../components/ControlPanel.vue';
 import WeatherBar from '@/components/WeatherBar.vue';
 
-const apiKey = 'd2736c1d75667857ddcc39a3dc4651c3'; // Tu clave de API de OpenWeatherMap
-const datetime = new Date().toISOString(); // Fecha y hora actual
-const cityInput = ref(''); // Campo de entrada para la ciudad
+const apiKey = 'd2736c1d75667857ddcc39a3dc4651c3';
+const datetime = new Date().toISOString();
+const cityInput = ref(''); 
+const selectedCity = ref(''); 
+const filteredCities = ref([]); // Almacena las ciudades filtradas
 const latitude = ref(null);
 const longitude = ref(null);
-const error = ref(null); // Mensaje de error
+const error = ref(null); 
 
-// Función para obtener las coordenadas de la ciudad ingresada
-const fetchCoordinates = async () => {
+// Función para buscar ciudades
+const fetchCities = async () => {
   if (!cityInput.value) {
+    filteredCities.value = []; // Limpiar ciudades si no hay texto
+    return;
+  }
+
+  const geocodingUrl = `https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(cityInput.value)}&limit=5&appid=${apiKey}`;
+
+  try {
+    const response = await fetch(geocodingUrl);
+    if (!response.ok) {
+      throw new Error('Error en la respuesta de la API');
+    }
+    const data = await response.json();
+    filteredCities.value = data; // Asignar datos filtrados
+  } catch (error) {
+    console.error('Error al buscar ciudades:', error);
+  }
+};
+
+// Seleccionar ciudad
+const selectCity = (city) => {
+  selectedCity.value = city.name;
+  cityInput.value = `${city.name}, ${city.country}`; // Actualiza el input con la ciudad seleccionada
+  filteredCities.value = []; // Limpiar las sugerencias
+};
+
+// Función para obtener las coordenadas de la ciudad seleccionada
+const fetchCoordinates = async () => {
+  if (!selectedCity.value) {
     error.value = 'Por favor, introduce una ciudad.';
     return;
   }
 
-  const geocodingUrl = `https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(cityInput.value)}&limit=1&appid=${apiKey}`;
+  const geocodingUrl = `https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(selectedCity.value)}&limit=1&appid=${apiKey}`;
 
   try {
     const response = await fetch(geocodingUrl);
@@ -58,14 +94,12 @@ const fetchCoordinates = async () => {
     }
     const data = await response.json();
 
-    // Comprobar si se encontraron coordenadas
     if (data.length > 0) {
-      latitude.value = data[0].lat; // Asignar latitud
-      longitude.value = data[0].lon; // Asignar longitud
-      error.value = null; // Limpiar mensaje de error
+      latitude.value = data[0].lat; 
+      longitude.value = data[0].lon; 
+      error.value = null; 
 
-      // Imprimir coordenadas en consola para depuración
-      console.log(`Coordenadas de ${cityInput.value}:`, {
+      console.log(`Coordenadas de ${selectedCity.value}:`, {
         latitude: latitude.value,
         longitude: longitude.value,
       });
@@ -76,14 +110,13 @@ const fetchCoordinates = async () => {
     }
   } catch (error) {
     error.value = "Error al obtener coordenadas.";
-    console.error(error); // Para depuración
+    console.error(error); 
   }
 };
 
-// Cargar las coordenadas de Salamanca al montar el componente
 onMounted(() => {
-  cityInput.value = 'Salamanca'; // Establecer Salamanca como valor predeterminado
-  fetchCoordinates(); // Llamar a la función para obtener las coordenadas
+  selectedCity.value = 'Salamanca'; 
+  fetchCoordinates(); 
 });
 </script>
 
@@ -98,16 +131,30 @@ input {
   border: 1px solid #ccc;
   border-radius: 5px;
 }
+.suggestions {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+.suggestions li {
+  padding: 10px;
+  cursor: pointer;
+}
+.suggestions li:hover {
+  background-color: #f0f0f0;
+}
 button {
   padding: 10px;
   border: none;
-  background-color: #007BFF; /* Color azul */
+  background-color: #007BFF; 
   color: white;
   border-radius: 5px;
   cursor: pointer;
   transition: background-color 0.3s;
 }
 button:hover {
-  background-color: #0056b3; /* Color azul oscuro al pasar el ratón */
+  background-color: #0056b3; 
 }
 </style>
