@@ -1,12 +1,14 @@
+<script setup>
+import ControlPanel from '../components/ControlPanel.vue'; // Ajusta la ruta
+import WeatherBar from '@/components/WeatherBar.vue';
+</script>
+
 <template>
     <div class="dashboard">
+      <WeatherBar city="panama"/>
       <ControlPanel />
     </div>
   </template>
-  
-  <script setup>
-  import ControlPanel from '../components/ControlPanel.vue'; // Ajusta la ruta
-  </script>
   
   <style scoped>
   .dashboard {
