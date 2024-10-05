@@ -1,16 +1,30 @@
-# Node.js
-node_modules/
-npm-debug.log
-yarn-error.log
-
-# Optional npm cache directory
-.npm/
-
-# Optional yarn cache directory
-.yarn/
-
-# Optional output logs
-logs/
+# Logs
+logs
 *.log
+npm-debug.log*
 yarn-debug.log*
-.yarn-integrity
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+.DS_Store
+dist
+dist-ssr
+coverage
+*.local
+
+/cypress/videos/
+/cypress/screenshots/
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+*.tsbuildinfo
