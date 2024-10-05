@@ -1,16 +1,12 @@
 <script setup>
-  import { RouterView } from 'vue-router';
-  import InformationPanel from './components/InformationPanel.vue';
-  import HumidityMonitor from './components/HumidityMonitor.vue';
-import WeatherVar from './components/weatherVar.vue';
-
+import { RouterView } from 'vue-router';
+import Navbar from './components/Navbar.vue'; // Asegúrate de que la ruta sea correcta
+import Dashboard from './views/Dashboard.vue';
 </script>
 
 <template>
   <div>
-    <WeatherVar city="Madrid"/>
-    <InformationPanel/>
-    <HumidityMonitor/>
-    <RouterView/>
+    <Navbar /> <!-- Aquí agregas el Navbar -->
+    <RouterView />
   </div>
 </template>
