@@ -6,8 +6,11 @@
     <div v-if="weeklyWeather.length" class="weekly-weather-container">
       <div v-for="day in weeklyWeather" :key="day.date" class="weather-day">
         <p class="date">{{ formatDate(day.date) }}</p>
-        <p class="temperature">Temperatura Máxima: {{ day.temp_max }} °C</p>
-        <p class="temperature">Temperatura Mínima: {{ day.temp_min }} °C</p>
+        <!-- Ícono del clima -->
+        <i :class="['wi', getWeatherIcon(day)]" class="weather-icon"></i>
+        <p class="temperature">Máxima: {{ day.temp_max }} °C</p>
+        <p class="temperature">Mínima: {{ day.temp_min }} °C</p>
+        <p class="precipitation">Precipitación: {{ day.precipitation }} mm</p>
       </div>
     </div>
     
@@ -28,7 +31,7 @@ import axios from 'axios';
 import 'weather-icons/css/weather-icons.css'; // Asegúrate de haber instalado y configurado weather-icons
 
 export default {
-  name: 'WeatherBar',
+  name: 'WeatherWeek',
   props: {
     city: {
       type: String,
@@ -91,6 +94,35 @@ export default {
     },
     
     /**
+     * Determina el ícono del clima basado en las temperaturas máximas, mínimas y precipitación.
+     * @param {Object} day - Objeto que contiene temp_max, temp_min y precipitation.
+     * @returns {String} Clase de ícono de weather-icons.
+     */
+    getWeatherIcon(day) {
+      const { temp_max, temp_min, precipitation } = day;
+      
+      // Lógica para determinar la condición climática basada en precipitación
+      if (precipitation > 10) {
+        return 'wi-rain'; // Lluvia intensa
+      } else if (precipitation > 0) {
+        return 'wi-showers'; // Lluvia ligera
+      } 
+      else if (precipitation > 0 && temp_min <= 0) {
+        return 'wi-snow'; // Nieve
+      }
+      else {
+        // Lógica basada en la temperatura
+         if (temp_max >= 25) {
+          return 'wi-day-sunny'; // Soleado
+        } else if (temp_max >= 20 && temp_max < 25) {
+          return 'wi-day-cloudy'; // Nublado
+        } else {
+          return 'wi-day-sunny'; // Por defecto: Soleado
+        }
+      }
+    },
+    
+    /**
      * Obtiene el pronóstico del tiempo para la semana desde tu API.
      * @param {String} city - Nombre de la ciudad.
      */
@@ -108,74 +140,51 @@ export default {
         // Realizar la petición a tu API
         const response = await axios.get(apiUrl);
         console.log("response (Weekly)", response);
-        console.log("Temperaturas", response.data.data[0].p); 
         
         // Verificar si la respuesta tiene la estructura esperada
         if (!response.data || !Array.isArray(response.data.data)) {
           throw new Error('Estructura de respuesta inesperada');
         }
         
-        // Suponiendo que tu API devuelve parámetros como 't_max_2m:C' y 't_min_2m:C' para cada día
-        // Ajusta estos nombres según la estructura real de tu respuesta
+        // Extraer los datos necesarios
+        const tempMaxParam = response.data.data.find(param => param.parameter === 't_max_2m_24h:C');
+        const tempMinParam = response.data.data.find(param => param.parameter === 't_min_2m_24h:C');
+        const precipitationParam = response.data.data.find(param => param.parameter === 'precip_24h:mm');
         
-        // Extraer los datos de temperatura máxima y mínima
-        const tempMaxParam = response.data.data.find(param => param.parameter === 't_max_2m:C');
-        const tempMinParam = response.data.data.find(param => param.parameter === 't_min_2m:C');
-        
-        if (!tempMaxParam || !tempMinParam) {
-          throw new Error('Parámetros de temperatura no encontrados en la respuesta');
+        if (!tempMaxParam || !tempMinParam || !precipitationParam) {
+          throw new Error('Parámetros de temperatura o precipitación no encontrados en la respuesta');
         }
         
         const datesMax = tempMaxParam.coordinates[0].dates;
         const datesMin = tempMinParam.coordinates[0].dates;
+        const datesPrecip = precipitationParam.coordinates[0].dates;
         
-        // Asegurar que ambos arrays tengan la misma longitud
-        if (datesMax.length !== datesMin.length) {
-          throw new Error('Las temperaturas máximas y mínimas no coinciden en cantidad de días');
+        // Asegurar que todos los arrays tengan la misma longitud
+        if (datesMax.length !== datesMin.length || datesMax.length !== datesPrecip.length) {
+          throw new Error('Las temperaturas y precipitaciones no coinciden en cantidad de días');
         }
         
-        // Construir el array de pronóstico semanal
-        const weeklyData = datesMax.map((dayMax, index) => {
-          const dayMin = datesMin[index];
+        // Construir el array de pronóstico semanal, omitiendo el primer día si es el día actual
+        const weeklyData = datesMax.slice(1).map((dayMax, index) => {
+          const dayMin = datesMin[index + 1];
+          const dayPrecip = datesPrecip[index + 1];
           return {
             date: dayMax.date,
             temp_max: dayMax.value,
-            temp_min: dayMin.value
+            temp_min: dayMin.value,
+            precipitation: dayPrecip.value
           };
         });
         
         // Asignar los datos transformados a weeklyWeather
         this.weeklyWeather = weeklyData;
         
+        // Imprimir las temperaturas y precipitaciones en la consola para verificación
+        console.log("Pronóstico Semanal:", this.weeklyWeather);
+        
       } catch (error) {
         console.error('Error obteniendo pronóstico semanal', error);
         this.error = error.response?.data?.detail || error.message || 'Ocurrió un error al obtener el pronóstico semanal.';
-      }
-    },
-    
-    /**
-     * Determina el conditionId basado en los datos recibidos de tu API.
-     * Este método puede no ser necesario para el pronóstico semanal si solo se muestran temperaturas.
-     * Puedes eliminarlo si no lo utilizas.
-     * @param {Object} data - Datos recibidos de la API.
-     * @returns {Number} conditionId para mapear al icono.
-     */
-    determineConditionId(data) {
-      const { t_2m, precip_1h, wind_speed_10m } = data;
-      
-      // Ejemplo de lógica simple:
-      if (precip_1h > 10) {
-        return 502; // Lluvia intensa
-      } else if (wind_speed_10m > 20) {
-        return 200; // Tormenta
-      } else if (precip_1h > 0) {
-        return 500; // Lluvia ligera
-      } else if (t_2m < 0) {
-        return 600; // Nieve
-      } else if (t_2m >= 0 && t_2m < 10) {
-        return 802; // Nublado
-      } else {
-        return 800; // Soleado
       }
     }
   }
@@ -221,9 +230,19 @@ h2 {
   color: #555;
 }
 
-.temperature {
+.weather-icon {
+  font-size: 2rem;
+  color: #555;
+  margin-bottom: 0.5rem;
+}
+
+.temperature, .precipitation {
   margin: 0.3rem 0;
   color: #333;
+}
+
+.precipitation {
+  color: #1976d2; /* Color azul para destacar la precipitación */
 }
 
 .error-message, .loading-message {
