@@ -1,14 +1,18 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from pydantic.fields import Field
-from datetime import datetime
+from datetime import datetime, timedelta
 import httpx
 import meteoKeys as keys
+from cors import configure_cors
 
 #Constantes
 API_URL = "https://api.meteomatics.com"
 
 app = FastAPI()
+
+#Configurar CORS
+configure_cors(app)
 
 async def petitions(url, request):
     # Autenticación para la API
@@ -130,4 +134,26 @@ async def getWeatherStats(datetime: str, latitude: float, longitude: float):
     #Construir la peticion para los datos de hoy
     url = f"{API_URL}/{request.datetime.isoformat()}/{request.data_type}/{request.latitude},{request.longitude}/{request.response_format}"
 
+    return await petitions(url, request)
+
+#Returns the weather data on a week for the given datetime, data type, latitude, longitude
+@app.get("/weather/week/{datetime}/{latitude},{longitude}")
+async def getWeatherWeek(datetime: str, latitude: float, longitude: float):
+    #Recibo una fecha y pido los datos de la semana
+    try:
+        request = WeatherRequest(
+            datetime=datetime,
+            data_type="wind_speed_10m:kmh,wind_dir_10m:d,wind_gusts_10m_1h:kmh,precip_1h:mm,precip_24h:mm,t_2m:C",
+            latitude=latitude,
+            longitude=longitude,
+            response_format="json"
+        )
+
+        # Crear la fecha equivalente a 7 días después del parámetro datetime
+        fechaSemana = request.datetime + timedelta(days=7)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    #Construir la peticion para los datos de la semana
+    url = f"{API_URL}/{request.datetime.isoformat()}--{fechaSemana.isoformat()}/{request.data_type}/{request.latitude},{request.longitude}/{request.response_format}"
     return await petitions(url, request)
