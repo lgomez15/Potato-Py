@@ -1,1 +1,16 @@
-#escribe aquí alejandro
+# Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Optional npm cache directory
+.npm/
+
+# Optional yarn cache directory
+.yarn/
+
+# Optional output logs
+logs/
+*.log
+yarn-debug.log*
+.yarn-integrity
