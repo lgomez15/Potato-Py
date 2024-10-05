@@ -55,7 +55,7 @@ export default {
       weeklyWeather: [], // Array para almacenar los datos del pronóstico semanal
       error: null         // Manejo de errores
     };
-  },
+  }, 
   watch: {
     /**
      * Observa cambios en las props 'city', 'latitude', 'longitude' y 'datetime' para actualizar el pronóstico semanal.
