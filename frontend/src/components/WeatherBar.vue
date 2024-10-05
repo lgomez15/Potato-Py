@@ -1,17 +1,15 @@
 <template>
-  <div class="weather-forecast">
-    <h1>Tiempo Actual en {{ city }}</h1>
+  <div class="weather-week">
+    <h2>Pronóstico de la Semana en {{ city }}</h2>
     
-    <!-- Mostrar el tiempo actual -->
-    <div v-if="currentWeather" class="current-weather-section">
-      <h2>Hoy</h2>
-      <div class="current-weather-container">
-        <i :class="getWeatherIconClass(currentWeather.conditionId)" class="weather-icon"></i>
-        <p class="temperature">Temperatura: {{ currentWeather.temperature }} °C</p>
-        <p class="wind">Viento: {{ currentWeather.wind_speed }} km/h, Dirección: {{ currentWeather.wind_dir }}°</p>
-        <p class="gusts">Ráfagas: {{ currentWeather.wind_gusts }} km/h</p>
-        <p class="precipitation">Precipitación (1h): {{ currentWeather.precip_1h }} mm</p>
-        <p class="precipitation">Precipitación (24h): {{ currentWeather.precip_24h }} mm</p>
+    <!-- Mostrar el pronóstico semanal -->
+    <div v-if="weeklyWeather.length" class="weekly-weather-container">
+      <div v-for="day in weeklyWeather" :key="day.date" class="weather-day">
+        <p class="date">{{ formatDate(day.date) }}</p>
+        <!-- Ícono del clima -->
+        <i :class="['wi', getWeatherIcon(day)]" class="weather-icon"></i>
+        <p class="temperature">Máx: {{ day.temp_max }}°C / Mín: {{ day.temp_min }}°C</p>
+        <p class="precipitation">Precipitación: {{ day.precipitation }} mm</p>
       </div>
     </div>
     
@@ -22,182 +20,136 @@
     
     <!-- Estado de Carga -->
     <div v-else class="loading-message">
-      <p>Cargando datos de tiempo actual...</p>
+      <p>Cargando pronóstico de la semana...</p>
     </div>
   </div>
 </template>
 
 <script>
 import axios from 'axios';
-import 'weather-icons/css/weather-icons.css'; // Asegúrate de importar los estilos de Weather Icons
+import 'weather-icons/css/weather-icons.css';
 
 export default {
+  name: 'WeatherWeek',
   props: {
     city: {
+      type: String,
+      required: true
+    },
+    latitude: {
+      type: Number,
+      required: true
+    },
+    longitude: {
+      type: Number,
+      required: true
+    },
+    datetime: {
       type: String,
       required: true
     }
   },
   data() {
     return {
-      currentWeather: null, // Datos del tiempo actual
-      error: null           // Error
+      weeklyWeather: [],
+      error: null
     };
   },
-  mounted() {
-    this.fetchCurrentWeather(this.city);
-  },
-  methods: {
-    /**
-     * Capitaliza la primera letra de una cadena de texto.
-     * @param {String} text - Texto a capitalizar.
-     * @returns {String} Texto capitalizado.
-     */
-    capitalizeFirstLetter(text) {
-      if (!text) return '';
-      return text.charAt(0).toUpperCase() + text.slice(1);
-    },
-    
-    /**
-     * Mapea el código de condición de Meteomatics al nombre de la clase de Weather Icons.
-     * @param {Number} conditionId - ID de la condición del clima.
-     * @returns {String} Nombre de la clase de Weather Icons.
-     */
-    mapConditionToIcon(conditionId) {
-      // Deberás ajustar este mapeo según los códigos de condición que devuelve tu API
-      if (conditionId >= 200 && conditionId < 300) {
-        return 'wi-thunderstorm';
-      } else if (conditionId >= 300 && conditionId < 500) {
-        return 'wi-sprinkle';
-      } else if (conditionId >= 500 && conditionId < 600) {
-        return 'wi-rain';
-      } else if (conditionId >= 600 && conditionId < 700) {
-        return 'wi-snow';
-      } else if (conditionId >= 700 && conditionId < 800) {
-        return 'wi-fog';
-      } else if (conditionId === 800) {
-        return 'wi-day-sunny';
-      } else if (conditionId > 800 && conditionId < 900) {
-        return 'wi-cloudy';
-      } else {
-        return 'wi-na'; // No disponible
+  watch: {
+    city(newCity, oldCity) {
+      if (newCity !== oldCity) {
+        this.fetchWeeklyWeather();
       }
     },
-    
-    /**
-     * Genera la clase completa para el icono del clima.
-     * @param {Number} conditionId - ID de la condición del clima.
-     * @returns {String} Clase CSS completa para el icono.
-     */
-    getWeatherIconClass(conditionId) {
-      return `wi ${this.mapConditionToIcon(conditionId)}`;
-    },
-    
-    /**
-     * Obtiene las coordenadas (latitud y longitud) de una ciudad usando el endpoint de Geocodificación del backend.
-     * @param {String} city - Nombre de la ciudad.
-     * @returns {Object} Objeto con latitud y longitud.
-     */
-async getCoordinates(city) {
-    const apiKey = 'd2736c1d75667857ddcc39a3dc4651c3'; // Tu clave de API de OpenWeatherMap
-    const geocodingUrl = `https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(city)}&limit=1&appid=${apiKey}`;
-
-    try {
-      const response = await axios.get(geocodingUrl);
-      if (response.data && response.data.length > 0) {
-        const { lat, lon } = response.data[0];
-        return { latitude: lat, longitude: lon };
-      } else {
-        throw new Error('No se encontraron coordenadas para la ciudad proporcionada.');
+    latitude(newLat, oldLat) {
+      if (newLat !== oldLat) {
+        this.fetchWeeklyWeather();
       }
-    } catch (error) {
-      console.error('Error obteniendo coordenadas', error);
-      throw new Error('No se pudieron obtener las coordenadas de la ciudad.');
+    },
+    longitude(newLon, oldLon) {
+      if (newLon !== oldLon) {
+        this.fetchWeeklyWeather();
+      }
+    },
+    datetime(newDatetime, oldDatetime) {
+      if (newDatetime !== oldDatetime) {
+        this.fetchWeeklyWeather();
+      }
     }
   },
+  mounted() {
+    this.fetchWeeklyWeather();
+  },
+  methods: {
+    formatDate(dateStr) {
+      const options = { weekday: 'short', day: 'numeric', month: 'short' };
+      const date = new Date(dateStr);
+      return date.toLocaleDateString(undefined, options);
+    },
     
-    /**
-     * Obtiene los datos del tiempo actual desde tu API.
-     * @param {String} city - Nombre de la ciudad.
-     */
-async fetchCurrentWeather(city) {
-try {
-  // Obtener las coordenadas de la ciudad usando el endpoint de geocodificación
-  const { latitude, longitude } = await this.getCoordinates(city);
-  
-  // Obtener la fecha y hora actual en formato ISO
-  const currentDatetime = new Date().toISOString();
-  
-  // Construir la URL de tu API
-  const apiUrl = `http://127.0.0.1:8000/weather/${encodeURIComponent(currentDatetime)}/${latitude},${longitude}`;
-  
-  // Realizar la petición a tu API
-  const response = await axios.get(apiUrl);
-  
-  // Verificar si la respuesta tiene la estructura esperada
-  if (!response.data || !Array.isArray(response.data.data)) {
-    throw new Error('Estructura de respuesta inesperada');
-  }
-  
-  // Crear un objeto para almacenar los datos transformados
-  const weatherData = {};
-  
-  // Recorrer cada parámetro en la respuesta
-  response.data.data.forEach(paramObj => {
-    const parameter = paramObj.parameter; // Ejemplo: "t_2m:C"
-    
-    // Extraer el nombre del parámetro sin el sufijo
-    const key = parameter.split(':')[0]; // "t_2m"
-    
-    // Obtener el valor
-    const value = paramObj.coordinates[0].dates[0].value; // Por ejemplo, 25.4
-    
-    // Asignar el valor al objeto weatherData
-    weatherData[key] = value;
-  });
-  
-  // Asignar los datos transformados a currentWeather
-  this.currentWeather = {
-    temperature: weatherData.t_2m,
-    wind_speed: weatherData.wind_speed_10m,
-    wind_dir: weatherData.wind_dir_10m,
-    wind_gusts: weatherData.wind_gusts_10m_1h,
-    precip_1h: weatherData.precip_1h,
-    precip_24h: weatherData.precip_24h,
-    conditionId: this.determineConditionId(weatherData) // Función para determinar conditionId
-  };
-  
-  // Imprimir la temperatura en la consola
-  console.log("temperatura", this.currentWeather.temperature);
-  
-} catch (error) {
-  console.error('Error obteniendo datos del tiempo actual', error);
-  this.error = error.response?.data?.detail || error.message || 'Ocurrió un error al obtener los datos del tiempo actual.';
-}
-},
-
-    
-    /**
-     * Determina el conditionId basado en los datos recibidos de tu API.
-     * @param {Object} data - Datos recibidos de la API.
-     * @returns {Number} conditionId para mapear al icono.
-     */
-determineConditionId(data) {
-      const { t_2m, precip_1h, wind_speed_10m} = data;
+    getWeatherIcon(day) {
+      const { temp_max, temp_min, precipitation } = day;
       
-      // Ejemplo de lógica simple:
-      if (precip_1h > 10) {
-        return 502; // Lluvia intensa
-      } else if (wind_speed_10m > 20) {
-        return 200; // Tormenta
-      } else if (precip_1h > 0) {
-        return 500; // Lluvia ligera
-      } else if (t_2m < 0) {
-        return 600; // Nieve
-      } else if (t_2m >= 0 && t_2m < 10) {
-        return 802; // Nublado
+      if (precipitation > 10) {
+        return 'wi-rain';
+      } else if (precipitation > 0) {
+        if (temp_min <= 0) {
+          return 'wi-snow';
+        }
+        return 'wi-showers';
       } else {
-        return 800; // Soleado
+        if (temp_max >= 25) {
+          return 'wi-day-sunny';
+        } else if (temp_max >= 20 && temp_max < 25) {
+          return 'wi-day-cloudy';
+        } else {
+          return 'wi-day-sunny';
+        }
+      }
+    },
+    
+    async fetchWeeklyWeather() {
+      this.weeklyWeather = [];
+      this.error = null;
+      
+      try {
+        const apiUrl = `http://127.0.0.1:8000/weather/week/${encodeURIComponent(this.datetime)}/${this.latitude},${this.longitude}`;
+        const response = await axios.get(apiUrl);
+        
+        if (!response.data || !Array.isArray(response.data.data)) {
+          throw new Error('Estructura de respuesta inesperada');
+        }
+        
+        const tempMaxParam = response.data.data.find(param => param.parameter === 't_max_2m_24h:C');
+        const tempMinParam = response.data.data.find(param => param.parameter === 't_min_2m_24h:C');
+        const precipitationParam = response.data.data.find(param => param.parameter === 'precip_24h:mm');
+        
+        if (!tempMaxParam || !tempMinParam || !precipitationParam) {
+          throw new Error('Parámetros de temperatura o precipitación no encontrados en la respuesta');
+        }
+        
+        const datesMax = tempMaxParam.coordinates[0].dates;
+        const datesMin = tempMinParam.coordinates[0].dates;
+        const datesPrecip = precipitationParam.coordinates[0].dates;
+        
+        if (datesMax.length !== datesMin.length || datesMax.length !== datesPrecip.length) {
+          throw new Error('Las temperaturas y precipitaciones no coinciden en cantidad de días');
+        }
+        
+        const weeklyData = datesMax.slice(1).map((dayMax, index) => {
+          const dayMin = datesMin[index + 1];
+          const dayPrecip = datesPrecip[index + 1];
+          return {
+            date: dayMax.date,
+            temp_max: dayMax.value,
+            temp_min: dayMin.value,
+            precipitation: dayPrecip.value
+          };
+        });
+        
+        this.weeklyWeather = weeklyData;
+      } catch (error) {
+        this.error = error.response?.data?.detail || error.message || 'Error al obtener el pronóstico semanal.';
       }
     }
   }
@@ -205,44 +157,65 @@ determineConditionId(data) {
 </script>
 
 <style scoped>
-.weather-forecast {
+.weather-week {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   padding: 2rem;
-  background: linear-gradient(135deg, #ece9e6, #ffffff);
+  background: linear-gradient(135deg, #f0f4f8, #ffffff);
   border-radius: 12px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  max-width: 600px;
-  margin: 0 auto;
+  max-width: 100%;
+  margin: 0 auto 2rem auto;
 }
 
-h1 {
+h2 {
   text-align: center;
   color: #333;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
+  font-size: 2rem;
 }
 
-.current-weather-section {
+.weekly-weather-container {
+  display: flex;
+  flex-wrap: nowrap; /* Alinea las tarjetas en una sola línea */
+  overflow-x: auto; /* Permite el desplazamiento horizontal */
+  gap: 15px;
+}
+
+.weather-day {
+  background: linear-gradient(135deg, #e9eff5, #f6f9fc);
+  padding: 1rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  min-width: 150px; /* Asegura que las tarjetas mantengan un tamaño adecuado */
   text-align: center;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  flex-shrink: 0;
 }
 
-.current-weather-container {
-  background: linear-gradient(135deg, #f6f9fc, #e9eff5);
-  padding: 2rem;
-  border-radius: 12px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  display: inline-block;
+.weather-day:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.15);
+}
+
+.date {
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+  color: #555;
 }
 
 .weather-icon {
-  font-size: 48px;
-  color: #ff9800;
-  margin-bottom: 1rem;
+  font-size: 2rem;
+  color: #2980b9;
+  margin-bottom: 0.5rem;
 }
 
-.temperature, .wind, .gusts, .precipitation {
-  font-size: 1rem;
+.temperature, .precipitation {
+  margin: 0.3rem 0;
   color: #333;
-  margin: 0.5rem 0;
+}
+
+.precipitation {
+  color: #1976d2;
 }
 
 .error-message, .loading-message {
@@ -250,16 +223,5 @@ h1 {
   margin-top: 2rem;
   color: #d32f2f;
   font-weight: bold;
-}
-
-@media (max-width: 600px) {
-  .current-weather-container {
-    width: 100%;
-    padding: 1rem;
-  }
-  
-  .weather-icon {
-    font-size: 36px;
-  }
 }
 </style>
