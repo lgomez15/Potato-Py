@@ -2,6 +2,8 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from pydantic.fields import Field
 from datetime import datetime, timedelta
+import random
+import time
 import httpx
 import meteoKeys as keys
 from cors import configure_cors
@@ -13,6 +15,23 @@ app = FastAPI()
 
 #Configurar CORS
 configure_cors(app)
+
+
+#Modelo para las peticiones
+class WeatherRequest(BaseModel):
+    datetime: datetime
+    data_type: str
+    latitude: float
+    longitude: float
+    response_format: str = Field(default="json", pattern=r"^(json|html|xml)$")
+
+# Modelo de datos para la respuesta de humedad
+class HumidityResponse(BaseModel):
+    timestamp: float
+    humidity: float
+
+# Variable para almacenar la humedad anterior
+previous_humidity = None
 
 async def petitions(url, request):
     # Autenticación para la API
@@ -28,14 +47,6 @@ async def petitions(url, request):
 
     # Devolver la respuesta de la API de Meteomatics
     return response.json() if request.response_format == "json" else response.text
-
-#Modelo para las peticiones
-class WeatherRequest(BaseModel):
-    datetime: datetime
-    data_type: str
-    latitude: float
-    longitude: float
-    response_format: str = Field(default="json", pattern=r"^(json|html|xml)$")
 
 
 @app.get("/")
@@ -157,3 +168,24 @@ async def getWeatherWeek(datetime: str, latitude: float, longitude: float):
     #Construir la peticion para los datos de la semana
     url = f"{API_URL}/{request.datetime.isoformat()}--{fechaSemana.isoformat()}/{request.data_type}/{request.latitude},{request.longitude}/{request.response_format}"
     return await petitions(url, request)
+
+# Función para simular los datos del sensor de humedad
+def simulate_humidity():
+    global previous_humidity
+    
+    if previous_humidity is None:
+        # Inicializa con un valor aleatorio entre 70 y 75
+        previous_humidity = round(random.uniform(70, 75), 2)
+    
+    # Ajusta el nuevo valor dentro de un rango pequeño, para mantener entre 70 y 75
+    adjustment = random.uniform(-1, 1)  # Cambia en un rango de -1 a +1
+    new_humidity = max(70, min(75, previous_humidity + adjustment))  # Mantener entre 70-75%
+    
+    previous_humidity = new_humidity  # Actualiza el valor anterior
+    return round(new_humidity, 2)
+
+# Ruta de la API que proporciona la humedad simulada
+@app.get("/humidity", response_model=HumidityResponse)
+async def get_humidity():
+    simulated_humidity = simulate_humidity()
+    return HumidityResponse(timestamp=time.time(), humidity=simulated_humidity)
