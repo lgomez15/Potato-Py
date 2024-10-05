@@ -1,0 +1,61 @@
+/* src/assets/main.css */
+
+/* Establecer un tipo de letra global */
+body {
+  font-family: 'Arial', sans-serif; /* Cambia a la fuente que prefieras */
+  margin: 0;
+  padding: 0;
+  background-color: #f0f0f0; /* Color de fondo general */
+  color: #333; /* Color del texto general */
+}
+
+/* Estilo para encabezados */
+h1, h2, h3, h4, h5, h6 {
+  margin: 0;
+  padding: 10px 0;
+}
+
+/* Estilo de párrafos */
+p {
+  line-height: 1.6; /* Espaciado entre líneas */
+}
+
+/* Enlaces */
+a {
+  text-decoration: none; /* Sin subrayado */
+  color: #3498db; /* Color de enlaces */
+}
+
+a:hover {
+  text-decoration: underline; /* Subrayado al pasar el ratón */
+}
+
+/* Estilos generales de botones */
+button {
+  background-color: #3498db; /* Color de fondo del botón */
+  color: white; /* Color del texto */
+  border: none;
+  border-radius: 4px; /* Bordes del botón */
+  padding: 10px 15px; /* Espaciado dentro del botón */
+  cursor: pointer; /* Cambia el cursor al pasar el ratón */
+  transition: background-color 0.3s ease; /* Efecto de transición */
+}
+
+button:hover {
+  background-color: #2980b9; /* Color más oscuro al pasar el ratón */
+}
+
+/* Estilos para tarjetas y contenedores */
+.card {
+  background-color: white; /* Color de fondo de la tarjeta */
+  border: 1px solid #ddd; /* Borde */
+  border-radius: 5px; /* Bordes de la tarjeta */
+  padding: 20px; /* Espaciado interno */
+  margin: 10px; /* Espaciado externo */
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Sombra */
+  transition: transform 0.3s; /* Efecto de transición */
+}
+
+.card:hover {
+  transform: translateY(-2px); /* Efecto de elevación al pasar el ratón */
+}
