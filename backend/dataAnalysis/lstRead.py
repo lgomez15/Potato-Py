@@ -15,18 +15,20 @@ def read_csv(file_path):
         ]
     return header, data
 
-file_path = "backend\dataAnalysis\LST-Request-MOD11A1-061-results.csv"
+file_path = "LST-Request-MOD11A1-061-results.csv"
 header, data = read_csv(file_path)
 
 # Print only the filtered data
 # Convert the second part of the data to float and subtract 273.15
 data = [(date, float(lst_day) - 273.15) for date, lst_day in data]
 
-output_file_path = "backend\dataAnalysis\SalamancaLST.csv"
+filtered_data = [(date, round(temp, 2)) for date, temp in data if temp >= -270]
+data = filtered_data
+
+output_file_path = "SalamancaLST.csv"
 with open(output_file_path, mode='w', newline='') as file:
     csv_writer = csv.writer(file)
     # Write the header
     csv_writer.writerow(["Date", "LST_Day_Celsius"])
     # Write the data
     csv_writer.writerows(data)
-print("Filtered Data:", data)
