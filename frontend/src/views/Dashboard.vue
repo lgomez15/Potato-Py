@@ -5,32 +5,41 @@
       v-model="cityInput" 
       @input="fetchCities" 
       placeholder="Escribe el nombre de la ciudad" 
+      class="city-input"
     />
+    
+    <!-- Lista de sugerencias -->
     <ul v-if="filteredCities.length > 0" class="suggestions">
       <li 
         v-for="(city, index) in filteredCities" 
         :key="index" 
-        @click="selectCity(city)"
+        @click="selectCity(city)" 
+        class="suggestion-item"
       >
         {{ city.name }}, {{ city.country }}
       </li>
     </ul>
-    <button @click="fetchCoordinates">Buscar Coordenadas</button>
-    
-    <p v-if="error" class="error">{{ error }}</p>
 
+    <!-- Botón de búsqueda -->
+    <button @click="fetchCoordinates" class="search-button">Buscar Coordenadas</button>
+
+    <!-- Mensaje de error -->
+    <p v-if="error" class="error-message">{{ error }}</p>
+
+    <!-- Barra del tiempo -->
     <WeatherBar
-      :datetime="datetime" 
-      :latitude="latitude" 
-      :longitude="longitude" 
+      :datetime="datetime"
+      :latitude="latitude"
+      :longitude="longitude"
       :city="selectedCity"
     />
-    
+
+    <!-- Panel de control -->
     <div v-if="latitude !== null && longitude !== null">
-      <ControlPanel 
-        :datetime="datetime" 
-        :latitude="latitude" 
-        :longitude="longitude" 
+      <ControlPanel
+        :datetime="datetime"
+        :latitude="latitude"
+        :longitude="longitude"
       />
     </div>
   </div>
@@ -43,17 +52,17 @@ import WeatherBar from '@/components/WeatherBar.vue';
 
 const apiKey = 'd2736c1d75667857ddcc39a3dc4651c3';
 const datetime = new Date().toISOString();
-const cityInput = ref(''); 
-const selectedCity = ref(''); 
-const filteredCities = ref([]); // Almacena las ciudades filtradas
+const cityInput = ref('');
+const selectedCity = ref('');
+const filteredCities = ref([]); 
 const latitude = ref(null);
 const longitude = ref(null);
-const error = ref(null); 
+const error = ref(null);
 
 // Función para buscar ciudades
 const fetchCities = async () => {
   if (!cityInput.value) {
-    filteredCities.value = []; // Limpiar ciudades si no hay texto
+    filteredCities.value = [];
     return;
   }
 
@@ -61,11 +70,9 @@ const fetchCities = async () => {
 
   try {
     const response = await fetch(geocodingUrl);
-    if (!response.ok) {
-      throw new Error('Error en la respuesta de la API');
-    }
+    if (!response.ok) throw new Error('Error en la respuesta de la API');
     const data = await response.json();
-    filteredCities.value = data; // Asignar datos filtrados
+    filteredCities.value = data;
   } catch (error) {
     console.error('Error al buscar ciudades:', error);
   }
@@ -74,8 +81,8 @@ const fetchCities = async () => {
 // Seleccionar ciudad
 const selectCity = (city) => {
   selectedCity.value = city.name;
-  cityInput.value = `${city.name}, ${city.country}`; // Actualiza el input con la ciudad seleccionada
-  filteredCities.value = []; // Limpiar las sugerencias
+  cityInput.value = `${city.name}, ${city.country}`;
+  filteredCities.value = [];
 };
 
 // Función para obtener las coordenadas de la ciudad seleccionada
@@ -89,72 +96,113 @@ const fetchCoordinates = async () => {
 
   try {
     const response = await fetch(geocodingUrl);
-    if (!response.ok) {
-      throw new Error('Error en la respuesta de la API');
-    }
+    if (!response.ok) throw new Error('Error en la respuesta de la API');
     const data = await response.json();
-
     if (data.length > 0) {
-      latitude.value = data[0].lat; 
-      longitude.value = data[0].lon; 
-      error.value = null; 
-
-      console.log(`Coordenadas de ${selectedCity.value}:`, {
-        latitude: latitude.value,
-        longitude: longitude.value,
-      });
+      latitude.value = data[0].lat;
+      longitude.value = data[0].lon;
+      error.value = null;
     } else {
-      error.value = "No se encontraron coordenadas para la ciudad ingresada.";
+      error.value = 'No se encontraron coordenadas para la ciudad ingresada.';
       latitude.value = null;
       longitude.value = null;
     }
   } catch (error) {
-    error.value = "Error al obtener coordenadas.";
-    console.error(error); 
+    error.value = 'Error al obtener coordenadas.';
+    console.error(error);
   }
 };
 
 onMounted(() => {
-  selectedCity.value = 'Salamanca'; 
-  fetchCoordinates(); 
+  selectedCity.value = 'Salamanca';
+  fetchCoordinates();
 });
 </script>
 
 <style scoped>
 .dashboard {
+  display: block;
+  width: 100%;
+  max-width: 1200px; /* Establecer un límite de ancho */
+  margin: 0 auto;
   padding: 20px;
+  box-sizing: border-box;
 }
-input {
-  width: 70%;
-  padding: 10px;
+
+h2 {
+  font-size: 1.8rem;
+  color: #34495e;
   margin-bottom: 20px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
 }
+
+.city-input {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 15px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: border-color 0.3s ease;
+}
+
+.city-input:focus {
+  border-color: #3498db;
+  outline: none;
+}
+
 .suggestions {
   list-style: none;
   padding: 0;
   margin: 0;
-  border: 1px solid #ccc;
-  border-radius: 5px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  max-height: 200px; /* Altura máxima para el scroll */
+  overflow-y: auto;
 }
-.suggestions li {
+
+.suggestion-item {
   padding: 10px;
   cursor: pointer;
+  transition: background-color 0.3s ease;
 }
-.suggestions li:hover {
-  background-color: #f0f0f0;
+
+.suggestion-item:hover {
+  background-color: #ecf0f1;
 }
-button {
-  padding: 10px;
-  border: none;
-  background-color: #007BFF; 
+
+.search-button {
+  background-color: #3498db;
   color: white;
-  border-radius: 5px;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 6px;
   cursor: pointer;
-  transition: background-color 0.3s;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+  font-size: 1em;
+  width: 100%;
 }
-button:hover {
-  background-color: #0056b3; 
+
+.search-button:hover {
+  background-color: #2980b9;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.error-message {
+  color: #e74c3c;
+  font-weight: bold;
+  text-align: center;
+  margin-top: 10px;
+}
+
+/* Ajustes responsivos */
+@media (max-width: 768px) {
+  h2 {
+    font-size: 1.5rem;
+  }
+
+  .search-button {
+    font-size: 0.9em;
+  }
 }
 </style>

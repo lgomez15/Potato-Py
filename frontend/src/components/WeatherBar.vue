@@ -8,8 +8,7 @@
         <p class="date">{{ formatDate(day.date) }}</p>
         <!-- Ícono del clima -->
         <i :class="['wi', getWeatherIcon(day)]" class="weather-icon"></i>
-        <p class="temperature">Máxima: {{ day.temp_max }} °C</p>
-        <p class="temperature">Mínima: {{ day.temp_min }} °C</p>
+        <p class="temperature">Máx: {{ day.temp_max }}°C / Mín: {{ day.temp_min }}°C</p>
         <p class="precipitation">Precipitación: {{ day.precipitation }} mm</p>
       </div>
     </div>
@@ -28,7 +27,7 @@
 
 <script>
 import axios from 'axios';
-import 'weather-icons/css/weather-icons.css'; // Asegúrate de haber instalado y configurado weather-icons
+import 'weather-icons/css/weather-icons.css';
 
 export default {
   name: 'WeatherWeek',
@@ -52,14 +51,11 @@ export default {
   },
   data() {
     return {
-      weeklyWeather: [], // Array para almacenar los datos del pronóstico semanal
-      error: null         // Manejo de errores
+      weeklyWeather: [],
+      error: null
     };
-  }, 
+  },
   watch: {
-    /**
-     * Observa cambios en las props 'city', 'latitude', 'longitude' y 'datetime' para actualizar el pronóstico semanal.
-     */
     city(newCity, oldCity) {
       if (newCity !== oldCity) {
         this.fetchWeeklyWeather();
@@ -85,66 +81,45 @@ export default {
     this.fetchWeeklyWeather();
   },
   methods: {
-    /**
-     * Formatea una fecha en formato legible.
-     * @param {String} dateStr - Fecha en formato ISO.
-     * @returns {String} Fecha formateada.
-     */
     formatDate(dateStr) {
-      const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+      const options = { weekday: 'short', day: 'numeric', month: 'short' };
       const date = new Date(dateStr);
       return date.toLocaleDateString(undefined, options);
     },
     
-    /**
-     * Determina el ícono del clima basado en las temperaturas máximas, mínimas y precipitación.
-     * @param {Object} day - Objeto que contiene temp_max, temp_min y precipitation.
-     * @returns {String} Clase de ícono de weather-icons.
-     */
     getWeatherIcon(day) {
       const { temp_max, temp_min, precipitation } = day;
       
-      // Lógica para determinar la condición climática basada en precipitación
       if (precipitation > 10) {
-        return 'wi-rain'; // Lluvia intensa
+        return 'wi-rain';
       } else if (precipitation > 0) {
         if (temp_min <= 0) {
-          return 'wi-snow'; // Nieve
+          return 'wi-snow';
         }
-        return 'wi-showers'; // Lluvia ligera
+        return 'wi-showers';
       } else {
-        // Lógica basada en la temperatura
         if (temp_max >= 25) {
-          return 'wi-day-sunny'; // Soleado
+          return 'wi-day-sunny';
         } else if (temp_max >= 20 && temp_max < 25) {
-          return 'wi-day-cloudy'; // Nublado
+          return 'wi-day-cloudy';
         } else {
-          return 'wi-day-sunny'; // Por defecto: Soleado
+          return 'wi-day-sunny';
         }
       }
     },
     
-    /**
-     * Obtiene el pronóstico del tiempo para la semana desde tu API.
-     */
     async fetchWeeklyWeather() {
       this.weeklyWeather = [];
       this.error = null;
       
       try {
-        // Construir la URL de tu API para el pronóstico semanal
         const apiUrl = `http://127.0.0.1:8000/weather/week/${encodeURIComponent(this.datetime)}/${this.latitude},${this.longitude}`;
-        
-        // Realizar la petición a tu API
         const response = await axios.get(apiUrl);
-        console.log("response (Weekly)", response);
         
-        // Verificar si la respuesta tiene la estructura esperada
         if (!response.data || !Array.isArray(response.data.data)) {
           throw new Error('Estructura de respuesta inesperada');
         }
         
-        // Extraer los datos necesarios
         const tempMaxParam = response.data.data.find(param => param.parameter === 't_max_2m_24h:C');
         const tempMinParam = response.data.data.find(param => param.parameter === 't_min_2m_24h:C');
         const precipitationParam = response.data.data.find(param => param.parameter === 'precip_24h:mm');
@@ -157,12 +132,10 @@ export default {
         const datesMin = tempMinParam.coordinates[0].dates;
         const datesPrecip = precipitationParam.coordinates[0].dates;
         
-        // Asegurar que todos los arrays tengan la misma longitud
         if (datesMax.length !== datesMin.length || datesMax.length !== datesPrecip.length) {
           throw new Error('Las temperaturas y precipitaciones no coinciden en cantidad de días');
         }
         
-        // Construir el array de pronóstico semanal, omitiendo el primer día si es el día actual
         const weeklyData = datesMax.slice(1).map((dayMax, index) => {
           const dayMin = datesMin[index + 1];
           const dayPrecip = datesPrecip[index + 1];
@@ -174,15 +147,9 @@ export default {
           };
         });
         
-        // Asignar los datos transformados a weeklyWeather
         this.weeklyWeather = weeklyData;
-        
-        // Imprimir las temperaturas y precipitaciones en la consola para verificación
-        console.log("Pronóstico Semanal:", this.weeklyWeather);
-        
       } catch (error) {
-        console.error('Error obteniendo pronóstico semanal', error);
-        this.error = error.response?.data?.detail || error.message || 'Ocurrió un error al obtener el pronóstico semanal.';
+        this.error = error.response?.data?.detail || error.message || 'Error al obtener el pronóstico semanal.';
       }
     }
   }
@@ -196,7 +163,7 @@ export default {
   background: linear-gradient(135deg, #f0f4f8, #ffffff);
   border-radius: 12px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  max-width: 800px;
+  max-width: 100%;
   margin: 0 auto 2rem auto;
 }
 
@@ -204,12 +171,14 @@ h2 {
   text-align: center;
   color: #333;
   margin-bottom: 1rem;
+  font-size: 2rem;
 }
 
 .weekly-weather-container {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: space-around;
+  flex-wrap: nowrap; /* Alinea las tarjetas en una sola línea */
+  overflow-x: auto; /* Permite el desplazamiento horizontal */
+  gap: 15px;
 }
 
 .weather-day {
@@ -217,9 +186,15 @@ h2 {
   padding: 1rem;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  margin: 0.5rem;
-  width: 200px;
+  min-width: 150px; /* Asegura que las tarjetas mantengan un tamaño adecuado */
   text-align: center;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  flex-shrink: 0;
+}
+
+.weather-day:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.15);
 }
 
 .date {
@@ -230,7 +205,7 @@ h2 {
 
 .weather-icon {
   font-size: 2rem;
-  color: #555;
+  color: #2980b9;
   margin-bottom: 0.5rem;
 }
 
@@ -240,7 +215,7 @@ h2 {
 }
 
 .precipitation {
-  color: #1976d2; /* Color azul para destacar la precipitación */
+  color: #1976d2;
 }
 
 .error-message, .loading-message {
@@ -248,12 +223,5 @@ h2 {
   margin-top: 2rem;
   color: #d32f2f;
   font-weight: bold;
-}
-
-@media (max-width: 600px) {
-  .weather-day {
-    width: 100%;
-    margin: 0.5rem 0;
-  }
 }
 </style>

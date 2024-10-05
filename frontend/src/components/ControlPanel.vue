@@ -1,6 +1,6 @@
 <template>
   <div class="control-panel">
-    <h1 class="panel-title">Control Panel</h1>
+    <h1 class="panel-title">Panel de Control</h1>
 
     <div class="info-cards">
       <div class="info-card">
@@ -46,7 +46,6 @@
 <script setup>
 import { ref, computed, onMounted, defineProps, watch } from 'vue';
 
-// Definición de props
 const props = defineProps({
   datetime: {
     type: String,
@@ -54,15 +53,14 @@ const props = defineProps({
   },
   latitude: {
     type: Number,
-    required: false // No es obligatorio
+    required: false
   },
   longitude: {
     type: Number,
-    required: false // No es obligatorio
+    required: false
   }
 });
 
-// Datos de la información del clima
 const weatherData = ref({
   windSpeed: null,
   windDirection: null,
@@ -72,42 +70,25 @@ const weatherData = ref({
   temperature: null,
 });
 
-// Datos de la humedad del suelo
 const humidity = ref(null);
 const loading = ref(true);
 const error = ref(null);
 
-// Clase para el monitor de humedad
 const humidityClass = computed(() => {
   if (humidity.value === null) return "";
-  if (humidity.value < 30) {
-    return "low"; // Rojo
-  } else if (humidity.value < 60) {
-    return "medium"; // Amarillo
-  } else {
-    return "high"; // Verde
-  }
+  if (humidity.value < 30) return "low";
+  else if (humidity.value < 60) return "medium";
+  else return "high";
 });
 
-// Función para obtener los datos del clima
 const fetchWeatherData = async () => {
-  // No hacer la solicitud si no hay coordenadas
-  if (props.latitude === null || props.longitude === null) {
-    console.warn("Coordenadas no disponibles, no se puede obtener el clima.");
-    return;
-  }
+  if (!props.latitude || !props.longitude) return;
 
   try {
     const response = await fetch(`http://127.0.0.1:8000/weather/${props.datetime}/${props.latitude},${props.longitude}`);
-    
-    // Verificar si la respuesta es exitosa
-    if (!response.ok) {
-      throw new Error("Error al obtener datos del clima");
-    }
-    
+    if (!response.ok) throw new Error("Error al obtener datos del clima");
     const data = await response.json();
 
-    // Asignar los valores de la respuesta a weatherData
     weatherData.value.windSpeed = data.data.find(item => item.parameter === 'wind_speed_10m:kmh')?.coordinates[0]?.dates[0]?.value || null;
     weatherData.value.windDirection = data.data.find(item => item.parameter === 'wind_dir_10m:d')?.coordinates[0]?.dates[0]?.value || null;
     weatherData.value.windGusts = data.data.find(item => item.parameter === 'wind_gusts_10m_1h:kmh')?.coordinates[0]?.dates[0]?.value || null;
@@ -121,16 +102,10 @@ const fetchWeatherData = async () => {
   }
 };
 
-// Función para obtener la humedad
 const fetchHumidity = async () => {
   try {
     const response = await fetch("http://localhost:8000/humidity");
-    
-    // Verificar si la respuesta es exitosa
-    if (!response.ok) {
-      throw new Error("Error al obtener datos de humedad");
-    }
-    
+    if (!response.ok) throw new Error("Error al obtener datos de humedad");
     const data = await response.json();
     humidity.value = data.humidity;
   } catch (err) {
@@ -141,88 +116,116 @@ const fetchHumidity = async () => {
   }
 };
 
-// Llamar a las funciones en el montaje del componente
 onMounted(() => {
   fetchWeatherData();
   fetchHumidity();
   setInterval(fetchHumidity, 10000); // Actualizar cada 10 segundos
 });
 
-// Observador para los cambios en latitude y longitude
-watch(() => [props.latitude, props.longitude], ([newLatitude, newLongitude]) => {
-  fetchWeatherData(); // Llamar a fetchWeatherData cuando cambian las coordenadas
+watch(() => [props.latitude, props.longitude], () => {
+  fetchWeatherData();
 });
 </script>
-
 <style scoped>
 .control-panel {
+  max-width: 100%;
+  margin: 0 auto;
   padding: 20px;
-  background-color: white;
-  border: 1px solid #e0e0e0;
+  background-color: #f0f4f8;
+  border-radius: 15px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  max-width: 1000px;
-  margin: 20px auto;
-  border-radius: 8px; /* Bordes menos redondeados */
+  overflow: hidden;
 }
 
 .panel-title {
-  font-size: 2em;
-  margin-bottom: 20px;
-  color: #333;
   text-align: center;
+  font-size: 2.5rem;
+  color: #34495e;
+  margin-bottom: 25px;
+  letter-spacing: 1.2px;
 }
 
 .info-cards {
-  display: flex; /* Cambiado de grid a flex */
-  flex-wrap: wrap; /* Permitir que se envuelvan las tarjetas */
-  justify-content: space-between; /* Espacio entre tarjetas */
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
   gap: 20px;
 }
 
 .info-card {
-  background-color: #f9f9f9;
-  border: 1px solid #ddd;
-  border-radius: 5px; /* Bordes menos redondeados */
+  background: linear-gradient(135deg, #e9eff5, #f6f9fc);
+  border-radius: 12px;
   padding: 20px;
   text-align: center;
-  width: calc(20% - 20px); /* Tamaño ajustado para ser rectangular */
-  min-width: 200px; /* Ancho mínimo para cada tarjeta */
-  transition: box-shadow 0.3s ease;
+  flex: 1 1 calc(33.33% - 20px); /* Tres columnas */
+  min-width: 200px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .info-card:hover {
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  transform: translateY(-5px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+}
+
+.info-card h2 {
+  font-size: 1.75rem;
+  color: #2c3e50;
+  margin-bottom: 15px;
+}
+
+.info-card p {
+  font-size: 1.2rem;
+  color: #34495e;
 }
 
 .humidity-monitor {
-  padding: 20px;
+  padding: 25px;
+  margin-top: 30px;
+  background-color: #eef2f7;
+  border-radius: 15px;
   text-align: center;
-  border-radius: 5px; /* Bordes menos redondeados */
-  border: 1px solid #ddd;
-  margin-top: 20px; /* Separar de la sección de clima */
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  transition: background-color 0.3s ease;
 }
 
 .low {
-  background-color: #ffcccc; /* Rojo claro */
+  background-color: #ffcccc;
 }
 
 .medium {
-  background-color: #ffffcc; /* Amarillo claro */
+  background-color: #ffffcc;
 }
 
 .high {
-  background-color: #ccffcc; /* Verde claro */
+  background-color: #ccffcc;
 }
 
 h2 {
-  font-size: 1.5em;
+  font-size: 2rem;
   margin-bottom: 10px;
   color: #555;
 }
 
 p {
-  font-size: 1.2em;
-  margin: 0;
+  font-size: 1.2rem;
   color: #111;
+}
+
+/* Media queries para hacer el diseño responsive */
+@media (max-width: 768px) {
+  .info-cards {
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .info-card {
+    width: 100%;
+  }
+}
+
+@media (min-width: 1200px) {
+  .info-card {
+    flex: 1 1 calc(25% - 20px); /* Cuatro columnas para pantallas grandes */
+  }
 }
 </style>
