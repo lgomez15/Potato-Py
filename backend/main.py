@@ -2,11 +2,16 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from pydantic.fields import Field
 from datetime import datetime, timedelta
-import random
+import joblib
+import random, time
+import numpy as np
 import time
 import httpx
 import meteoKeys as keys
 from cors import configure_cors
+
+# Cargar el modelo previamente entrenado
+modelo_cargado = joblib.load('modelo_xgboost_entrenado.pkl')
 
 #Constantes
 API_URL = "https://api.meteomatics.com"
@@ -15,7 +20,6 @@ app = FastAPI()
 
 #Configurar CORS
 configure_cors(app)
-
 
 #Modelo para las peticiones
 class WeatherRequest(BaseModel):
@@ -29,6 +33,25 @@ class WeatherRequest(BaseModel):
 class HumidityResponse(BaseModel):
     timestamp: float
     humidity: float
+    
+class Sensor(BaseModel):
+    id: int
+    name: str
+    humedadDetectada: float
+
+class PlantData(BaseModel):
+    week_of_year: int
+    row: int
+    column: int
+    plant_id: int
+    stem_diameter: float
+    highest_truss: float
+    temp_mean: float
+    temp_min: float
+    temp_max: float
+    humidity_mean: float
+    humidity_min: float
+    humidity_max: float
 
 # Variable para almacenar la humedad anterior
 previous_humidity = None
@@ -189,3 +212,94 @@ def simulate_humidity():
 async def get_humidity():
     simulated_humidity = simulate_humidity()
     return HumidityResponse(timestamp=time.time(), humidity=simulated_humidity)
+
+#@app.get("/sensors/")
+def createArraySensors():
+    sensors = []
+    for i in range(9):
+        sensor = Sensor(
+            id=i, 
+            name="Sensor "+str(i), 
+            humedadDetectada= float(random.uniform(75,100))
+        )
+        if i == 3:
+            #Simulamos una humedad media
+            sensor.humedadDetectada = round(float(random.uniform(25, 75)),2)
+        if i == 6:
+            #Simulamos una humedad baja
+            sensor.humedadDetectada = round(float(random.uniform(0, 25)),2)
+        sensors.append(sensor)
+
+    return sensors
+
+def affectedSensors(sensorsArray):
+    affected = 0
+    for sensor in sensorsArray:
+        if sensor.humedadDetectada <= 25:
+            affected = sensor
+
+    return affected
+
+def getNeighbors(sensorID, grid_size=3):
+    neighbors = []
+    row, col = divmod(sensorID, grid_size)
+    
+    for r in range(row-1, row+2):
+        for c in range(col-1, col+2):
+            if (0 <= r < grid_size) and (0 <= c < grid_size) and (r != row or c != col):
+                neighbors.append(r * grid_size + c)
+                
+    return neighbors
+
+@app.get("/sensors/")
+def sendSensors():
+    sensors = createArraySensors()
+    affected_sensor = affectedSensors(sensors)
+    
+    # Asumimos que solo hay un sensor afectado para simplificar
+    if affected_sensor:
+        neighbors = getNeighbors(affected_sensor.id)
+        
+        for sensor in sensors:
+            if sensor.id in neighbors:
+                # Restar el 30% de su propio valor de humedad
+                diferencia = sensor.humedadDetectada - (sensor.humedadDetectada * 0.3)
+                sensor.humedadDetectada = f"{round(diferencia,2)}%"
+            else:
+                # Solo concatenar el símbolo '%'
+                sensor.humedadDetectada = f"{round(sensor.humedadDetectada,2)}%"
+    
+    return sensors
+
+# Función para clasificar el resultado
+def clasificar_crecimiento(prediccion):
+    if prediccion < 20:
+        return "bajo"
+    elif 20 <= prediccion <= 40:
+        return "medio"
+    else:
+        return "alto"
+    
+@app.post("/predict/")
+def predict_growth(data: PlantData):
+    # Crear un array con los datos recibidos
+    entrada = np.array([[data.week_of_year, data.row, data.column, data.plant_id, 
+                        data.stem_diameter, data.highest_truss, data.temp_mean, 
+                        data.temp_min, data.temp_max, data.humidity_mean, 
+                        data.humidity_min, data.humidity_max]])
+    
+    # Realizar la predicción con el modelo cargado
+    prediccion = modelo_cargado.predict(entrada)[0]  # Obtener la predicción como un número
+    
+    # Convertir el resultado a un tipo de datos nativo de Python (float)
+    prediccion = float(prediccion)
+    
+    # Clasificar el crecimiento en "bajo", "medio" o "alto"
+    categoria = clasificar_crecimiento(prediccion)
+    
+    # Devolver la predicción y la categoría como respuesta
+    return {
+        "predicted_stem_growth": prediccion,
+        "categoria": categoria
+    }
+    
