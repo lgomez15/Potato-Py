@@ -168,13 +168,14 @@ onMounted(() => {
   height: 50px;
   display: flex;
   align-items: center;
+  margin-bottom: 10px;
 }
 
 .scrolling-text {
   position: absolute;
   white-space: nowrap;
   will-change: transform;
-  animation: scroll-text 10s linear infinite;
+  animation: scroll-text 18s linear infinite;
 }
 
 @keyframes scroll-text {
