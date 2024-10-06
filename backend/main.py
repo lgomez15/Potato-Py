@@ -36,7 +36,6 @@ class HumidityResponse(BaseModel):
     
 class Sensor(BaseModel):
     id: int
-    name: str
     humedadDetectada: float
 
 class PlantData(BaseModel):
@@ -193,31 +192,51 @@ async def getTemperatureWeek(datetime: str, latitude: float, longitude: float):
     return await petitions(url, request)
 
 
-def createArraySensors():
+def createArraySensors(num_sensors=9):
     sensors = []
-    for i in range(9):
+    num_baja_humedad = round(num_sensors * 0.1)
+    num_media_humedad = round(num_sensors * 0.2)
+    num_alta_humedad = num_sensors - num_baja_humedad - num_media_humedad
+
+    # Crear sensores con baja humedad
+    for i in range(num_baja_humedad):
         sensor = Sensor(
-            id=i, 
-            name="Sensor "+str(i), 
-            humedadDetectada= float(random.uniform(75,100))
+            id=i,
+            humedadDetectada=round(float(random.uniform(0, 25)), 2)
         )
-        if i == 3:
-            #Simulamos una humedad media
-            sensor.humedadDetectada = round(float(random.uniform(25, 75)),2)
-        if i == 6:
-            #Simulamos una humedad baja
-            sensor.humedadDetectada = round(float(random.uniform(0, 25)),2)
         sensors.append(sensor)
+
+    # Crear sensores con media humedad
+    for i in range(num_baja_humedad, num_baja_humedad + num_media_humedad):
+        sensor = Sensor(
+            id=i,
+            humedadDetectada=round(float(random.uniform(25, 75)), 2)
+        )
+        sensors.append(sensor)
+
+    # Crear sensores con alta humedad
+    for i in range(num_baja_humedad + num_media_humedad, num_sensors):
+        sensor = Sensor(
+            id=i,
+            humedadDetectada=round(float(random.uniform(75, 100)), 2)
+        )
+        sensors.append(sensor)
+
+    # Barajar los sensores para distribuirlos aleatoriamente
+    random.shuffle(sensors)
+
+    # Actualizar los IDs después de barajar
+    for idx, sensor in enumerate(sensors):
+        sensor.id = idx
 
     return sensors
 
-def affectedSensors(sensorsArray):
-    affected = 0
+def criticSensors(sensorsArray):
+    criticSensors = []
     for sensor in sensorsArray:
         if sensor.humedadDetectada <= 25:
-            affected = sensor
-
-    return affected
+            criticSensors.append(sensor)
+    return criticSensors
 
 def getNeighbors(sensorID, grid_size=3):
     neighbors = []
@@ -230,31 +249,30 @@ def getNeighbors(sensorID, grid_size=3):
                 
     return neighbors
 
-@app.get("/sensorsB/")
-def sendBadSensors():
-    sensors = createArraySensors()
-    affected_sensor = affectedSensors(sensors)
+@app.get("/sensorsB/{num_sensors}")
+def sendBadSensors(num_sensores=9):
+    # Crear los sensores
+    sensors = createArraySensors(num_sensores)
     
-    # Asumimos que solo hay un sensor afectado para simplificar
-    if affected_sensor:
-        neighbors = getNeighbors(affected_sensor.id)
+    # Encontrar los sensores criticos (humedad <= 25)
+    critic_sensors = criticSensors(sensors)
+    
+    #encuentra los vecinos de los sensores criticos
+    for sensor in critic_sensors:
+        neighbors = getNeighbors(sensor.id)
         
-        for sensor in sensors:
-            if sensor.id in neighbors:
-                # Restar el 30% de su propio valor de humedad
-                diferencia = sensor.humedadDetectada - (sensor.humedadDetectada * 0.3)
-                sensor.humedadDetectada = f"{round(diferencia,2)}%"
-            else:
-                # Solo concatenar el símbolo '%'
-                sensor.humedadDetectada = f"{round(sensor.humedadDetectada,2)}%"
-    
+        for neighbor in neighbors:
+            sensors[neighbor].humedadDetectada -= (sensors[neighbor].humedadDetectada * 0.3)
+            
     return sensors
 
-@app.get("/sensorsG/")
-def sendGoodSensors():
-    sensors = createArraySensors()
+@app.get("/sensorsG/{num_sensors}")
+def sendGoodSensors(num_sensores=9):
+    # Crear los sensores
+    sensors = createArraySensors(num_sensores)
+    
     for sensor in sensors:
-        sensor.humedadDetectada = f"{round(float(random.uniform(75,100)),2)}%"
+        sensor.humedadDetectada = round(float(random.uniform(75, 100)), 2)
     return sensors
 
 # Función para clasificar el resultado
