@@ -2,6 +2,12 @@
   <div class="prediction-container">
     <h2>Predicción de Crecimiento del Tallo</h2>
     <form @submit.prevent="predecirCrecimiento" class="prediction-form">
+      <!-- Campo de entrada para la semana del año -->
+      <div class="date-group">
+        <label for="weekDate">Semana del Año:</label>
+        <input type="date" id="weekDate" v-model="weekDate" />
+      </div>
+
       <!-- Campos de entrada con sliders -->
       <div class="slider-group" v-for="(param, index) in parametros" :key="index">
         <label :for="param.name">{{ param.label }}: <span>{{ param.value }}</span></label>
@@ -79,13 +85,10 @@ import { gsap } from 'gsap';
 export default {
   data() {
     return {
+      weekDate: '', // Fecha seleccionada
+      stem_diameter: 5, // Diámetro del tallo fijo
       parametros: [
-        { name: 'week_of_year', label: 'Semana del Año', value: 1, min: 1, max: 52, step: 1 },
-        { name: 'row', label: 'Fila', value: 1, min: 1, max: 100, step: 1 },
-        { name: 'column', label: 'Columna', value: 1, min: 1, max: 100, step: 1 },
-        { name: 'plant_id', label: 'ID de Planta', value: 1, min: 1, max: 1000, step: 1 },
-        { name: 'stem_diameter', label: 'Diámetro del Tallo', value: 0.5, min: 0.1, max: 10, step: 0.1 },
-        { name: 'highest_truss', label: 'Racimo Más Alto', value: 1, min: 1, max: 20, step: 1 },
+        // Opciones restantes
         { name: 'temp_mean', label: 'Temperatura Media (°C)', value: 20, min: -10, max: 50, step: 0.1 },
         { name: 'temp_min', label: 'Temperatura Mínima (°C)', value: 15, min: -20, max: 40, step: 0.1 },
         { name: 'temp_max', label: 'Temperatura Máxima (°C)', value: 25, min: -5, max: 60, step: 0.1 },
@@ -134,8 +137,26 @@ export default {
     },
   },
   methods: {
+    // Función para calcular la semana del año
+    getWeekNumber(date) {
+      date = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+      date.setUTCDate(date.getUTCDate() + 4 - (date.getUTCDay() || 7));
+      const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+      const weekNo = Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
+      return weekNo;
+    },
     async predecirCrecimiento() {
+      if (!this.weekDate) {
+        alert('Por favor, seleccione una fecha.');
+        return;
+      }
       const datos = {};
+      // Calcular la semana del año a partir de la fecha seleccionada
+      const selectedDate = new Date(this.weekDate);
+      const weekOfYear = this.getWeekNumber(selectedDate);
+      datos['week_of_year'] = weekOfYear;
+      datos['stem_diameter'] = this.stem_diameter; // Fijar a 5
+
       this.parametros.forEach(param => {
         datos[param.name] = param.value;
       });
@@ -174,7 +195,7 @@ export default {
         gsap.to("#stem", { height: 40, y: 60, duration: 1 });
         gsap.to("#left-leaf", { opacity: 0, duration: 0 });
         gsap.to("#right-leaf", { opacity: 0, duration: 0 });
-        gsap.to("#fruit", { r: 0, opacity: 0, duration: 0 });
+        gsap.to("#fruit", { r: 0, opacity: 0 });
       }
     },
   },
@@ -205,6 +226,27 @@ h2 {
   display: flex;
   flex-wrap: wrap;
   gap: 30px;
+}
+
+/* Estilos para el grupo de fecha */
+.date-group {
+  flex: 1 1 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.date-group label {
+  font-weight: bold;
+  margin-bottom: 10px;
+  color: var(--text-color);
+  font-size: 1rem;
+}
+
+.date-group input[type="date"] {
+  padding: 10px;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 5px;
 }
 
 .slider-group {
