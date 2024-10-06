@@ -119,7 +119,7 @@ const fetchHumidity = async () => {
 onMounted(() => {
   fetchWeatherData();
   fetchHumidity();
-  setInterval(fetchHumidity, 10000); // Actualizar cada 10 segundos
+  setInterval(fetchHumidity, 1000); // Actualizar cada 10 segundos
 });
 
 watch(() => [props.latitude, props.longitude], () => {

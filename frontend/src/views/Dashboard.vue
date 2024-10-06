@@ -28,11 +28,12 @@
 
     <!-- Barra del tiempo -->
     <WeatherBar
-      :datetime="datetime"
-      :latitude="latitude"
-      :longitude="longitude"
+      :datetime="datetime" 
+      :latitude="latitude !== null ? latitude : 0" 
+      :longitude="longitude !== null ? longitude : 0" 
       :city="selectedCity"
     />
+
 
     <!-- Panel de control -->
     <div v-if="latitude !== null && longitude !== null">

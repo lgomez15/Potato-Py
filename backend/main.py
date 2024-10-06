@@ -175,11 +175,11 @@ def simulate_humidity():
     
     if previous_humidity is None:
         # Inicializa con un valor aleatorio entre 70 y 75
-        previous_humidity = round(random.uniform(70, 75), 2)
+        previous_humidity = round(random.uniform(20, 55), 2)
     
     # Ajusta el nuevo valor dentro de un rango pequeño, para mantener entre 70 y 75
     adjustment = random.uniform(-1, 1)  # Cambia en un rango de -1 a +1
-    new_humidity = max(70, min(75, previous_humidity + adjustment))  # Mantener entre 70-75%
+    new_humidity = max(20, min(55, previous_humidity + adjustment))  # Mantener entre 70-75%
     
     previous_humidity = new_humidity  # Actualiza el valor anterior
     return round(new_humidity, 2)
