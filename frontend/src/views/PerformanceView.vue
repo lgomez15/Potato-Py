@@ -1,43 +1,18 @@
 <template>
   <div class="prediction-container">
-    <h2>Predicción de Stem Growth</h2>
+    <h2>Predicción de Crecimiento del Tallo</h2>
     <form @submit.prevent="predecirCrecimiento" class="prediction-form">
-      <!-- Campos de entrada -->
-      <div class="form-group">
-        <input v-model="week_of_year" placeholder="Week of Year" type="number" />
-      </div>
-      <div class="form-group">
-        <input v-model="row" placeholder="Row" type="number" />
-      </div>
-      <div class="form-group">
-        <input v-model="column" placeholder="Column" type="number" />
-      </div>
-      <div class="form-group">
-        <input v-model="plant_id" placeholder="Plant ID" type="number" />
-      </div>
-      <div class="form-group">
-        <input v-model="stem_diameter" placeholder="Stem Diameter" type="number" step="0.01" />
-      </div>
-      <div class="form-group">
-        <input v-model="highest_truss" placeholder="Highest Truss" type="number" step="0.01" />
-      </div>
-      <div class="form-group">
-        <input v-model="temp_mean" placeholder="Temp Mean" type="number" step="0.01" />
-      </div>
-      <div class="form-group">
-        <input v-model="temp_min" placeholder="Temp Min" type="number" step="0.01" />
-      </div>
-      <div class="form-group">
-        <input v-model="temp_max" placeholder="Temp Max" type="number" step="0.01" />
-      </div>
-      <div class="form-group">
-        <input v-model="humidity_mean" placeholder="Humidity Mean" type="number" step="0.01" />
-      </div>
-      <div class="form-group">
-        <input v-model="humidity_min" placeholder="Humidity Min" type="number" step="0.01" />
-      </div>
-      <div class="form-group">
-        <input v-model="humidity_max" placeholder="Humidity Max" type="number" step="0.01" />
+      <!-- Campos de entrada con sliders -->
+      <div class="slider-group" v-for="(param, index) in parametros" :key="index">
+        <label :for="param.name">{{ param.label }}: <span>{{ param.value }}</span></label>
+        <input
+          type="range"
+          :id="param.name"
+          v-model="param.value"
+          :min="param.min"
+          :max="param.max"
+          :step="param.step"
+        />
       </div>
 
       <button type="submit" class="submit-button">Predecir</button>
@@ -54,37 +29,29 @@
 export default {
   data() {
     return {
-      week_of_year: '',
-      row: '',
-      column: '',
-      plant_id: '',
-      stem_diameter: '',
-      highest_truss: '',
-      temp_mean: '',
-      temp_min: '',
-      temp_max: '',
-      humidity_mean: '',
-      humidity_min: '',
-      humidity_max: '',
+      parametros: [
+        { name: 'week_of_year', label: 'Semana del Año', value: 1, min: 1, max: 52, step: 1 },
+        { name: 'row', label: 'Fila', value: 1, min: 1, max: 100, step: 1 },
+        { name: 'column', label: 'Columna', value: 1, min: 1, max: 100, step: 1 },
+        { name: 'plant_id', label: 'ID de Planta', value: 1, min: 1, max: 1000, step: 1 },
+        { name: 'stem_diameter', label: 'Diámetro del Tallo', value: 0.5, min: 0.1, max: 10, step: 0.1 },
+        { name: 'highest_truss', label: 'Racimo Más Alto', value: 1, min: 1, max: 20, step: 1 },
+        { name: 'temp_mean', label: 'Temperatura Media (°C)', value: 20, min: -10, max: 50, step: 0.1 },
+        { name: 'temp_min', label: 'Temperatura Mínima (°C)', value: 15, min: -20, max: 40, step: 0.1 },
+        { name: 'temp_max', label: 'Temperatura Máxima (°C)', value: 25, min: -5, max: 60, step: 0.1 },
+        { name: 'humidity_mean', label: 'Humedad Media (%)', value: 50, min: 0, max: 100, step: 1 },
+        { name: 'humidity_min', label: 'Humedad Mínima (%)', value: 30, min: 0, max: 100, step: 1 },
+        { name: 'humidity_max', label: 'Humedad Máxima (%)', value: 70, min: 0, max: 100, step: 1 },
+      ],
       resultado: null,
     };
   },
   methods: {
     async predecirCrecimiento() {
-      const datos = {
-        week_of_year: this.week_of_year,
-        row: this.row,
-        column: this.column,
-        plant_id: this.plant_id,
-        stem_diameter: this.stem_diameter,
-        highest_truss: this.highest_truss,
-        temp_mean: this.temp_mean,
-        temp_min: this.temp_min,
-        temp_max: this.temp_max,
-        humidity_mean: this.humidity_mean,
-        humidity_min: this.humidity_min,
-        humidity_max: this.humidity_max,
-      };
+      const datos = {};
+      this.parametros.forEach(param => {
+        datos[param.name] = param.value;
+      });
 
       const respuesta = await fetch("http://localhost:5515/predict/", {
         method: "POST",
@@ -102,73 +69,141 @@ export default {
 <style scoped>
 /* Contenedor principal */
 .prediction-container {
-  max-width: 600px;
-  margin: 0 auto;
-  background-color: #ffffff;
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  max-width: 900px;
+  margin: 40px auto;
+  padding: 40px;
+  background-color: #fff;
+  border-radius: 15px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
 }
 
 h2 {
   text-align: center;
-  margin-bottom: 20px;
+  margin-bottom: 40px;
+  font-size: 2.5rem;
+  color: var(--primary-color);
+  font-weight: 700;
+  font-family: 'Montserrat', sans-serif;
 }
 
-/* Estilos para el formulario */
 .prediction-form {
   display: flex;
   flex-wrap: wrap;
-  gap: 15px;
+  gap: 30px;
 }
 
-.form-group {
-  flex: 1 1 45%; /* Ajuste automático en 2 columnas */
-  min-width: 200px;
+.slider-group {
+  flex: 1 1 calc(50% - 30px);
+  display: flex;
+  flex-direction: column;
 }
 
-input {
+.slider-group label {
+  font-weight: bold;
+  margin-bottom: 10px;
+  color: var(--text-color);
+  font-size: 1rem;
+}
+
+.slider-group label span {
+  color: var(--secondary-color);
+  font-weight: normal;
+}
+
+.slider-group input[type="range"] {
+  -webkit-appearance: none;
   width: 100%;
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  font-size: 16px;
-}
-
-input:focus {
-  border-color: #3498db;
+  height: 10px;
+  border-radius: 5px;
+  background: #e0e0e0;
   outline: none;
-  box-shadow: 0 0 5px rgba(52, 152, 219, 0.5);
 }
 
-/* Estilos del botón */
-.submit-button {
-  padding: 12px 20px;
-  background-color: #3498db;
-  color: #fff;
-  font-size: 16px;
+.slider-group input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--primary-color);
+  cursor: pointer;
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.2);
+  transition: background-color 0.3s ease;
+}
+
+.slider-group input[type="range"]::-webkit-slider-thumb:hover {
+  background: var(--accent-color);
+}
+
+.slider-group input[type="range"]::-moz-range-thumb {
+  width: 28px;
+  height: 28px;
   border: none;
-  border-radius: 4px;
+  border-radius: 50%;
+  background: var(--primary-color);
+  cursor: pointer;
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.2);
+  transition: background-color 0.3s ease;
+}
+
+.slider-group input[type="range"]::-moz-range-thumb:hover {
+  background: var(--accent-color);
+}
+
+.submit-button {
+  padding: 15px 30px;
+  background-color: var(--primary-color);
+  color: #fff;
+  font-size: 1.2em;
+  font-weight: bold;
+  border: none;
+  border-radius: 10px;
   cursor: pointer;
   transition: background-color 0.3s ease;
-  width: 100%;
-  margin-top: 15px;
+  align-self: center;
+  margin-top: 20px;
 }
 
 .submit-button:hover {
-  background-color: #2980b9;
+  background-color: var(--secondary-color);
 }
 
-/* Estilos para el contenedor del resultado */
 .result-container {
-  margin-top: 20px;
+  margin-top: 40px;
   background-color: #f9f9f9;
-  padding: 15px;
-  border-radius: 4px;
+  padding: 30px;
+  border-radius: 10px;
   text-align: center;
 }
 
-h3, h4 {
+.result-container h3, .result-container h4 {
   margin: 10px 0;
+  color: var(--text-color);
+}
+
+.result-container h3 {
+  font-size: 2rem;
+  font-weight: bold;
+}
+
+.result-container h4 {
+  font-size: 1.5rem;
+  color: var(--secondary-color);
+}
+
+/* Responsividad */
+@media (max-width: 768px) {
+  .prediction-container {
+    padding: 20px;
+    margin: 20px;
+  }
+
+  .slider-group {
+    flex: 1 1 100%;
+  }
+
+  .submit-button {
+    width: 100%;
+  }
 }
 </style>

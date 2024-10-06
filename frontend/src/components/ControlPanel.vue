@@ -4,31 +4,37 @@
 
     <div class="info-cards">
       <div class="info-card">
+        <i class="fas fa-wind icon"></i>
         <h2>Velocidad del Viento</h2>
         <p>{{ weatherData.windSpeed !== null ? weatherData.windSpeed + ' km/h' : '---' }}</p>
       </div>
 
       <div class="info-card">
+        <i class="fas fa-compass icon"></i>
         <h2>Dirección del Viento</h2>
         <p>{{ weatherData.windDirection !== null ? weatherData.windDirection + '°' : '---' }}</p>
       </div>
 
       <div class="info-card">
+        <i class="fas fa-wind icon"></i>
         <h2>Ráfagas de Viento</h2>
         <p>{{ weatherData.windGusts !== null ? weatherData.windGusts + ' km/h' : '---' }}</p>
       </div>
 
       <div class="info-card">
+        <i class="fas fa-cloud-rain icon"></i>
         <h2>Precipitación 1h</h2>
         <p>{{ weatherData.precip1h !== null ? weatherData.precip1h + ' mm' : '---' }}</p>
       </div>
 
       <div class="info-card">
+        <i class="fas fa-cloud-showers-heavy icon"></i>
         <h2>Precipitación 24h</h2>
         <p>{{ weatherData.precip24h !== null ? weatherData.precip24h + ' mm' : '---' }}</p>
       </div>
 
       <div class="info-card">
+        <i class="fas fa-thermometer-half icon"></i>
         <h2>Temperatura</h2>
         <p>{{ weatherData.temperature !== null ? weatherData.temperature + '°C' : '---' }}</p>
       </div>
@@ -53,11 +59,11 @@ const props = defineProps({
   },
   latitude: {
     type: Number,
-    required: false
+    required: true
   },
   longitude: {
     type: Number,
-    required: false
+    required: true
   }
 });
 
@@ -126,62 +132,66 @@ watch(() => [props.latitude, props.longitude], () => {
   fetchWeatherData();
 });
 </script>
+
 <style scoped>
 .control-panel {
-  max-width: 100%;
-  margin: 0 auto;
+  max-width: 1200px;
+  margin: 20px auto;
   padding: 20px;
-  background-color: #f0f4f8;
-  border-radius: 15px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
 }
 
 .panel-title {
   text-align: center;
   font-size: 2.5rem;
-  color: #34495e;
-  margin-bottom: 25px;
-  letter-spacing: 1.2px;
+  color: var(--primary-color);
+  margin-bottom: 30px;
 }
 
 .info-cards {
   display: flex;
   flex-wrap: wrap;
-  justify-content: space-between;
   gap: 20px;
+  justify-content: center;
 }
 
 .info-card {
-  background: linear-gradient(135deg, #e9eff5, #f6f9fc);
+  background: linear-gradient(135deg, #a5d6a7, #e8f5e9);
   border-radius: 12px;
   padding: 20px;
   text-align: center;
-  flex: 1 1 calc(33.33% - 20px); /* Tres columnas */
-  min-width: 200px;
+  flex: 1 1 calc(33% - 40px);
+  max-width: calc(33% - 40px);
+  min-width: 250px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .info-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.15);
 }
 
 .info-card h2 {
-  font-size: 1.75rem;
-  color: #2c3e50;
-  margin-bottom: 15px;
+  font-size: 1.5rem;
+  color: var(--text-color);
+  margin-bottom: 10px;
 }
 
 .info-card p {
   font-size: 1.2rem;
-  color: #34495e;
+  color: var(--text-color);
+}
+
+.icon {
+  font-size: 2rem;
+  color: var(--secondary-color);
+  margin-bottom: 10px;
 }
 
 .humidity-monitor {
   padding: 25px;
   margin-top: 30px;
-  background-color: #eef2f7;
+  background-color: #fffde7;
   border-radius: 15px;
   text-align: center;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
@@ -189,43 +199,33 @@ watch(() => [props.latitude, props.longitude], () => {
 }
 
 .low {
-  background-color: #ffcccc;
+  background-color: #ffccbc;
 }
 
 .medium {
-  background-color: #ffffcc;
+  background-color: #fff9c4;
 }
 
 .high {
-  background-color: #ccffcc;
+  background-color: #c8e6c9;
 }
 
-h2 {
+.humidity-monitor h2 {
   font-size: 2rem;
   margin-bottom: 10px;
-  color: #555;
+  color: var(--primary-color);
 }
 
-p {
+.humidity-monitor p {
   font-size: 1.2rem;
-  color: #111;
+  color: var(--text-color);
 }
 
-/* Media queries para hacer el diseño responsive */
+/* Responsividad */
 @media (max-width: 768px) {
-  .info-cards {
-    flex-direction: column;
-    gap: 15px;
-  }
-
   .info-card {
-    width: 100%;
-  }
-}
-
-@media (min-width: 1200px) {
-  .info-card {
-    flex: 1 1 calc(25% - 20px); /* Cuatro columnas para pantallas grandes */
+    flex: 1 1 100%;
+    max-width: 100%;
   }
 }
 </style>

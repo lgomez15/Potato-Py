@@ -1,110 +1,153 @@
+<!-- Navbar.vue -->
 <template>
   <nav class="navbar">
-    <div class="navbar-logo">
-      <img src="../assets/logo.svg" alt="Logo" class="logo" />
-      <h1>Clima en el Campo</h1>
+    <div class="navbar-brand">
+      <h1>Agro<span>Monitor</span></h1>
     </div>
+    <input type="checkbox" id="nav-toggle" class="nav-toggle" />
+    <label for="nav-toggle" class="nav-toggle-label">
+      <span></span>
+    </label>
     <ul class="navbar-links">
-      <li><router-link to="/performance">Performance Model</router-link></li>
+      <li><router-link to="/">Inicio</router-link></li>
+      <li><router-link to="/performance">Modelo de Rendimiento</router-link></li>
+      <!-- Agrega más enlaces si es necesario -->
     </ul>
   </nav>
 </template>
 
 <script>
 export default {
-  name: "Navbar",
+  name: 'Navbar',
 };
 </script>
 
 <style scoped>
-/* Estilos para la barra de navegación */
 .navbar {
   display: flex;
+  align-items: center;
   justify-content: space-between;
-  align-items: center;
-  background-color: #2c3e50; /* Fondo oscuro y elegante */
-  padding: 15px 30px; /* Espaciado interno */
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Sombra para profundidad */
-  border-bottom: 3px solid #2980b9; /* Línea inferior decorativa */
-  position: sticky; /* Fijar barra de navegación en la parte superior */
+  background-color: var(--primary-color);
+  padding: 15px 20px;
+  position: sticky;
   top: 0;
-  z-index: 1000; /* Asegura que siempre esté encima de otros elementos */
+  z-index: 1000;
 }
 
-.navbar-logo {
-  display: flex;
-  align-items: center;
-}
-
-.logo {
-  height: 50px; /* Tamaño del logo ajustado */
-  margin-right: 15px; /* Espacio entre el logo y el título */
-}
-
-h1 {
-  color: white;
-  font-size: 1.8em; /* Tamaño de fuente más grande para el título */
+.navbar-brand h1 {
+  color: #fff;
+  font-size: 2rem;
   margin: 0;
+  font-weight: 700;
+  font-family: 'Montserrat', sans-serif;
 }
 
-/* Estilos para los enlaces de la barra de navegación */
+.navbar-brand h1 span {
+  font-weight: 300;
+}
+
 .navbar-links {
-  list-style-type: none;
+  list-style: none;
   display: flex;
-  gap: 30px; /* Separación entre los enlaces */
+  gap: 20px;
 }
 
 .navbar-links li {
-  font-size: 1.1em; /* Tamaño de fuente ligeramente más grande */
+  font-size: 1rem;
 }
 
 .navbar-links a {
-  color: white;
+  color: #fff;
   text-decoration: none;
-  padding: 8px 16px; /* Espaciado dentro del enlace */
-  border-radius: 6px; /* Bordes suaves para los enlaces */
-  transition: background-color 0.3s ease, transform 0.3s ease; /* Transiciones suaves */
+  padding: 8px 12px;
+  border-radius: 4px;
+  transition: background-color 0.3s ease;
 }
 
 .navbar-links a:hover {
-  background-color: #2980b9; /* Fondo azul más oscuro al hacer hover */
-  transform: translateY(-2px); /* Ligeramente elevado al pasar el cursor */
+  background-color: var(--secondary-color);
 }
 
-/* Responsive: Ajustes para pantallas más pequeñas */
+/* Estilos para el menú responsivo */
+.nav-toggle {
+  display: none;
+}
+
+.nav-toggle-label {
+  display: none;
+}
+
+.nav-toggle-label span {
+  display: block;
+  width: 28px;
+  height: 3px;
+  background: #fff;
+  border-radius: 3px;
+  position: relative;
+}
+
+.nav-toggle-label span::before,
+.nav-toggle-label span::after {
+  content: '';
+  position: absolute;
+  width: 28px;
+  height: 3px;
+  background: #fff;
+  border-radius: 3px;
+  transition: transform 0.3s ease;
+}
+
+.nav-toggle-label span::before {
+  transform: translateY(-8px);
+}
+
+.nav-toggle-label span::after {
+  transform: translateY(8px);
+}
+
+.nav-toggle:checked + .nav-toggle-label span {
+  background: transparent;
+}
+
+.nav-toggle:checked + .nav-toggle-label span::before {
+  transform: rotate(45deg);
+}
+
+.nav-toggle:checked + .nav-toggle-label span::after {
+  transform: rotate(-45deg);
+}
+
 @media (max-width: 768px) {
   .navbar {
+    flex-wrap: wrap;
+    justify-content: space-between;
+  }
+
+  .navbar-links {
     flex-direction: column;
-    align-items: flex-start;
-    padding: 10px 20px;
+    width: 100%;
+    display: none;
+    background-color: var(--primary-color);
+    padding: 10px 0;
+    margin: 0;
   }
 
-  .navbar-links {
-    gap: 15px; /* Reducir el espacio entre los enlaces en pantallas pequeñas */
-    flex-direction: column; /* Alinear los enlaces en columna */
-    width: 100%; /* Ocupa todo el ancho disponible */
+  .navbar-links li {
+    text-align: center;
+    margin: 10px 0;
   }
 
-  h1 {
-    font-size: 1.5em; /* Reducir ligeramente el tamaño del título */
+  .nav-toggle {
+    display: block;
   }
 
-  .logo {
-    height: 40px; /* Logo más pequeño en pantallas pequeñas */
-  }
-}
-
-@media (min-width: 1200px) {
-  .navbar-links {
-    gap: 40px; /* Mayor separación entre enlaces en pantallas grandes */
+  .nav-toggle-label {
+    display: block;
+    cursor: pointer;
   }
 
-  .logo {
-    height: 60px; /* Logo más grande en pantallas grandes */
-  }
-
-  h1 {
-    font-size: 2.2em; /* Mayor tamaño del título en pantallas grandes */
+  .nav-toggle:checked ~ .navbar-links {
+    display: flex;
   }
 }
 </style>

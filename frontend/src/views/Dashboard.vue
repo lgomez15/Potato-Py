@@ -1,38 +1,43 @@
+<!-- Dashboard.vue -->
 <template>
   <div class="dashboard">
-    <input 
-      type="text" 
-      v-model="cityInput" 
-      @input="fetchCities" 
-      placeholder="Escribe el nombre de la ciudad" 
-      class="city-input"
-    />
-    
-    <!-- Lista de sugerencias -->
-    <ul v-if="filteredCities.length > 0" class="suggestions">
-      <li 
-        v-for="(city, index) in filteredCities" 
-        :key="index" 
-        @click="selectCity(city)" 
-        class="suggestion-item"
-      >
-        {{ city.name }}, {{ city.country }}
-      </li>
-    </ul>
+    <div class="search-section">
+      <input 
+        type="text" 
+        v-model="cityInput" 
+        @input="fetchCities" 
+        placeholder="Escribe el nombre de la ciudad" 
+        class="city-input"
+      />
+      
+      <!-- Lista de sugerencias -->
+      <ul v-if="filteredCities.length > 0" class="suggestions">
+        <li 
+          v-for="(city, index) in filteredCities" 
+          :key="index" 
+          @click="selectCity(city)" 
+          class="suggestion-item"
+        >
+          {{ city.name }}, {{ city.country }}
+        </li>
+      </ul>
 
-    <!-- Botón de búsqueda -->
-    <button @click="fetchCoordinates" class="search-button">Buscar Coordenadas</button>
+      <!-- Botón de búsqueda -->
+      <button @click="fetchCoordinates" class="search-button">Buscar</button>
+    </div>
 
     <!-- Mensaje de error -->
     <p v-if="error" class="error-message">{{ error }}</p>
 
     <!-- Barra del tiempo -->
-    <WeatherBar
-      :datetime="datetime"
-      :latitude="latitude"
-      :longitude="longitude"
-      :city="selectedCity"
-    />
+    <div v-if="latitude !== null && longitude !== null">
+      <WeatherBar
+        :datetime="datetime"
+        :latitude="latitude"
+        :longitude="longitude"
+        :city="selectedCity"
+      />
+    </div>
 
     <!-- Panel de control -->
     <div v-if="latitude !== null && longitude !== null">
@@ -50,7 +55,7 @@ import { ref, onMounted } from 'vue';
 import ControlPanel from '../components/ControlPanel.vue';
 import WeatherBar from '@/components/WeatherBar.vue';
 
-const apiKey = 'd2736c1d75667857ddcc39a3dc4651c3';
+const apiKey = 'd2736c1d75667857ddcc39a3dc4651c3'; // Asegúrate de reemplazar con tu API Key
 const datetime = new Date().toISOString();
 const cityInput = ref('');
 const selectedCity = ref('');
@@ -115,94 +120,80 @@ const fetchCoordinates = async () => {
 
 onMounted(() => {
   selectedCity.value = 'Salamanca';
+  cityInput.value = 'Salamanca, ES';
   fetchCoordinates();
 });
 </script>
 
 <style scoped>
 .dashboard {
-  display: block;
-  width: 100%;
-  max-width: 1200px; /* Establecer un límite de ancho */
+  max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
-  box-sizing: border-box;
 }
 
-h2 {
-  font-size: 1.8rem;
-  color: #34495e;
+.search-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   margin-bottom: 20px;
 }
 
 .city-input {
   width: 100%;
+  max-width: 500px;
   padding: 12px;
-  margin-bottom: 15px;
   border: 1px solid #ccc;
   border-radius: 6px;
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
-  transition: border-color 0.3s ease;
-}
-
-.city-input:focus {
-  border-color: #3498db;
-  outline: none;
+  margin-bottom: 10px;
 }
 
 .suggestions {
+  width: 100%;
+  max-width: 500px;
   list-style: none;
   padding: 0;
   margin: 0;
   border: 1px solid #ddd;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  max-height: 200px; /* Altura máxima para el scroll */
+  border-radius: 6px;
+  max-height: 200px;
   overflow-y: auto;
 }
 
 .suggestion-item {
   padding: 10px;
   cursor: pointer;
-  transition: background-color 0.3s ease;
 }
 
 .suggestion-item:hover {
-  background-color: #ecf0f1;
+  background-color: #f0f0f0;
 }
 
 .search-button {
-  background-color: #3498db;
+  background-color: var(--primary-color);
   color: white;
-  padding: 12px 20px;
+  padding: 10px 20px;
   border: none;
   border-radius: 6px;
   cursor: pointer;
-  transition: background-color 0.3s ease, box-shadow 0.3s ease;
   font-size: 1em;
-  width: 100%;
+  margin-top: 10px;
 }
 
 .search-button:hover {
-  background-color: #2980b9;
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+  background-color: var(--secondary-color);
 }
 
 .error-message {
   color: #e74c3c;
-  font-weight: bold;
   text-align: center;
   margin-top: 10px;
 }
 
 /* Ajustes responsivos */
 @media (max-width: 768px) {
-  h2 {
-    font-size: 1.5rem;
-  }
-
-  .search-button {
-    font-size: 0.9em;
+  .search-section {
+    width: 100%;
   }
 }
 </style>
