@@ -2,6 +2,8 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from pydantic.fields import Field
 from datetime import datetime, timedelta
+from typing import List
+from dataAnalysis.severeWeatherAlerts import get_severe_weather_alerts
 import joblib
 import random, time
 import numpy as np
@@ -52,9 +54,6 @@ class PlantData(BaseModel):
     humidity_mean: float
     humidity_min: float
     humidity_max: float
-
-# Variable para almacenar la humedad anterior
-previous_humidity = None
 
 async def petitions(url, request):
     # Autenticación para la API
@@ -192,53 +191,62 @@ async def getTemperatureWeek(datetime: str, latitude: float, longitude: float):
     url = f"{API_URL}/{request.datetime.isoformat()}--{fechaSemana.isoformat()}:P1D/{request.data_type}/{request.latitude},{request.longitude}/{request.response_format}"
     return await petitions(url, request)
 
-# Función para simular los datos del sensor de humedad
-def simulate_humidity():
-    global previous_humidity
-    
-    if previous_humidity is None:
-        # Inicializa con un valor aleatorio entre 70 y 75
-        previous_humidity = round(random.uniform(20, 55), 2)
-    
-    # Ajusta el nuevo valor dentro de un rango pequeño, para mantener entre 70 y 75
-    adjustment = random.uniform(-1, 1)  # Cambia en un rango de -1 a +1
-    new_humidity = max(20, min(55, previous_humidity + adjustment))  # Mantener entre 70-75%
-    
-    previous_humidity = new_humidity  # Actualiza el valor anterior
-    return round(new_humidity, 2)
+@app.get("/alert/{latitude},{longitude}")
+async def getWeatherAlert(latitude: float, longitude: float):
+    # Obtener las alertas de clima severo
+    alert, alert_message = get_severe_weather_alerts(latitude, longitude)
+    return {"alert": alert, "alert_message": alert_message}
 
-# Ruta de la API que proporciona la humedad simulada
-@app.get("/humidity", response_model=HumidityResponse)
-async def get_humidity():
-    simulated_humidity = simulate_humidity()
-    return HumidityResponse(timestamp=time.time(), humidity=simulated_humidity)
 
-#@app.get("/sensors/")
-def createArraySensors():
+def createArraySensors(num_sensors: List[Sensor]):
     sensors = []
-    for i in range(9):
+    num_baja_humedad = round(num_sensors * 0.1)
+    num_media_humedad = round(num_sensors * 0.2)
+    num_alta_humedad = num_sensors - num_baja_humedad - num_media_humedad
+
+    # Crear sensores con baja humedad
+    for i in range(num_baja_humedad):
         sensor = Sensor(
-            id=i, 
-            name="Sensor "+str(i), 
-            humedadDetectada= float(random.uniform(75,100))
+            id=i,
+            humedadDetectada=round(float(random.uniform(0, 25)), 2),
+            name=f"Sensor {i}"
         )
-        if i == 3:
-            #Simulamos una humedad media
-            sensor.humedadDetectada = round(float(random.uniform(25, 75)),2)
-        if i == 6:
-            #Simulamos una humedad baja
-            sensor.humedadDetectada = round(float(random.uniform(0, 25)),2)
         sensors.append(sensor)
+
+    # Crear sensores con media humedad
+    for i in range(num_baja_humedad, num_baja_humedad + num_media_humedad):
+        sensor = Sensor(
+            id=i,
+            humedadDetectada=round(float(random.uniform(25, 75)), 2),
+            name=f"Sensor {i}"
+        )
+        sensors.append(sensor)
+
+    # Crear sensores con alta humedad
+    for i in range(num_baja_humedad + num_media_humedad, num_sensors):
+        sensor = Sensor(
+            id=i,
+            humedadDetectada=round(float(random.uniform(75, 100)), 2),
+            name=f"Sensor {i}"
+        )
+        sensors.append(sensor)
+
+    # Barajar los sensores para distribuirlos aleatoriamente
+    random.shuffle(sensors)
+
+    # Actualizar los IDs después de barajar
+    for idx, sensor in enumerate(sensors):
+        sensor.id = idx
+        sensor.name = f"Sensor {idx}"
 
     return sensors
 
-def affectedSensors(sensorsArray):
-    affected = 0
+def criticSensors(sensorsArray):
+    criticSensors = []
     for sensor in sensorsArray:
         if sensor.humedadDetectada <= 25:
-            affected = sensor
-
-    return affected
+            criticSensors.append(sensor)
+    return criticSensors
 
 def getNeighbors(sensorID, grid_size=3):
     neighbors = []
@@ -251,24 +259,30 @@ def getNeighbors(sensorID, grid_size=3):
                 
     return neighbors
 
-@app.get("/sensors/")
-def sendSensors():
-    sensors = createArraySensors()
-    affected_sensor = affectedSensors(sensors)
+@app.get("/sensorsB/{num_sensors}")
+def sendBadSensors(num_sensors:int):
+    # Crear los sensores
+    sensors = createArraySensors(num_sensors)
     
-    # Asumimos que solo hay un sensor afectado para simplificar
-    if affected_sensor:
-        neighbors = getNeighbors(affected_sensor.id)
+    # Encontrar los sensores criticos (humedad <= 25)
+    critic_sensors = criticSensors(sensors)
+    
+    #encuentra los vecinos de los sensores criticos
+    for sensor in critic_sensors:
+        neighbors = getNeighbors(sensor.id)
         
-        for sensor in sensors:
-            if sensor.id in neighbors:
-                # Restar el 30% de su propio valor de humedad
-                diferencia = sensor.humedadDetectada - (sensor.humedadDetectada * 0.3)
-                sensor.humedadDetectada = f"{round(diferencia,2)}%"
-            else:
-                # Solo concatenar el símbolo '%'
-                sensor.humedadDetectada = f"{round(sensor.humedadDetectada,2)}%"
+        for neighbor in neighbors:
+            sensors[neighbor].humedadDetectada -= (sensors[neighbor].humedadDetectada * 0.3)
+            
+    return sensors
+
+@app.get("/sensorsG/{num_sensors}")
+def sendGoodSensors(num_sensors: int):
+    # Crear los sensores
+    sensors = createArraySensors(num_sensors)
     
+    for sensor in sensors:
+        sensor.humedadDetectada = round(float(random.uniform(75, 100)), 2)
     return sensors
 
 # Función para clasificar el resultado
