@@ -1,3 +1,4 @@
 /venv
 /backend/venv
 /backend/__pycache__
+/backend/dataAnalysis/__pycache__

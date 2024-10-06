@@ -191,7 +191,7 @@ async def getTemperatureWeek(datetime: str, latitude: float, longitude: float):
     url = f"{API_URL}/{request.datetime.isoformat()}--{fechaSemana.isoformat()}:P1D/{request.data_type}/{request.latitude},{request.longitude}/{request.response_format}"
     return await petitions(url, request)
 
-@app.get("/weather/alert/{latitude},{longitude}")
+@app.get("/alert/{latitude},{longitude}")
 async def getWeatherAlert(latitude: float, longitude: float):
     # Obtener las alertas de clima severo
     alert, alert_message = get_severe_weather_alerts(latitude, longitude)
