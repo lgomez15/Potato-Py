@@ -5,7 +5,7 @@
       <h1>Clima en el Campo</h1>
     </div>
     <ul class="navbar-links">
-      <li><router-link to="/">Dashboard</router-link></li>
+      <li><router-link to="/performance">Performance Model</router-link></li>
     </ul>
   </nav>
 </template>
