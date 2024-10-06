@@ -1,0 +1,16 @@
+/* main.css */
+
+/* Tipografía global */
+body {
+  font-family: 'Poppins', sans-serif;
+  margin: 0;
+  background-color: #f5f5f5;
+}
+
+/* Colores globales */
+:root {
+  --primary-color: #4CAF50; /* Verde agrícola */
+  --secondary-color: #8BC34A;
+  --accent-color: #CDDC39;
+  --text-color: #333;
+}

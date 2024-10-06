@@ -28,17 +28,13 @@
 9. Software Citation  
 10. Feedback  
 
-## How to run the project
-1. To run the api server-  uvicorn app:main --reload in project/backend
-2. to run the frontend go to project/frontend and run 'npm install' and then 'npm run dev'
-
 ## 1. Request Parameters  
 
     Name: LST_Request  
 
-    Date Completed:** 2024-10-05T11:44:21.832835  
+    Date Completed:** 2024-10-05T13:14:55.980577  
 
-    ID: 5cbb7223-5a53-4768-95cf-f66c05b71872  
+    ID: 34a1a904-d5f7-46e6-b7f7-51ee5e0443e2  
 
     Details:  
 
