@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from pydantic.fields import Field
 from datetime import datetime, timedelta
+from typing import List
 import joblib
 import random, time
 import numpy as np
@@ -36,6 +37,7 @@ class HumidityResponse(BaseModel):
     
 class Sensor(BaseModel):
     id: int
+    name: str
     humedadDetectada: float
 
 class PlantData(BaseModel):
@@ -192,7 +194,7 @@ async def getTemperatureWeek(datetime: str, latitude: float, longitude: float):
     return await petitions(url, request)
 
 
-def createArraySensors(num_sensors=9):
+def createArraySensors(num_sensors: List[Sensor]):
     sensors = []
     num_baja_humedad = round(num_sensors * 0.1)
     num_media_humedad = round(num_sensors * 0.2)
@@ -228,6 +230,7 @@ def createArraySensors(num_sensors=9):
     # Actualizar los IDs después de barajar
     for idx, sensor in enumerate(sensors):
         sensor.id = idx
+        sensor.name = f"Sensor {idx}"
 
     return sensors
 
@@ -250,9 +253,9 @@ def getNeighbors(sensorID, grid_size=3):
     return neighbors
 
 @app.get("/sensorsB/{num_sensors}")
-def sendBadSensors(num_sensores=9):
+def sendBadSensors(num_sensors:int):
     # Crear los sensores
-    sensors = createArraySensors(num_sensores)
+    sensors = createArraySensors(num_sensors)
     
     # Encontrar los sensores criticos (humedad <= 25)
     critic_sensors = criticSensors(sensors)
@@ -267,9 +270,9 @@ def sendBadSensors(num_sensores=9):
     return sensors
 
 @app.get("/sensorsG/{num_sensors}")
-def sendGoodSensors(num_sensores=9):
+def sendGoodSensors(num_sensors: int):
     # Crear los sensores
-    sensors = createArraySensors(num_sensores)
+    sensors = createArraySensors(num_sensors)
     
     for sensor in sensors:
         sensor.humedadDetectada = round(float(random.uniform(75, 100)), 2)
