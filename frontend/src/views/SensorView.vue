@@ -74,7 +74,7 @@
     methods: {
       async fetchSensorData() {
         try {
-          const response = await fetch('http://localhost:8000/sensors');
+          const response = await fetch('http://35.187.77.55:8000/sensors');
           if (!response.ok) throw new Error('Error al obtener datos de los sensores');
           const data = await response.json();
           this.sensors = data;

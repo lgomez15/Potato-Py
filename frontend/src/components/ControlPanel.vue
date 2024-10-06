@@ -85,7 +85,7 @@ const fetchWeatherData = async () => {
   if (!props.latitude || !props.longitude) return;
 
   try {
-    const response = await fetch(`http://127.0.0.1:8000/weather/${props.datetime}/${props.latitude},${props.longitude}`);
+    const response = await fetch(`http://35.187.77.55:8000/weather/${props.datetime}/${props.latitude},${props.longitude}`);
     if (!response.ok) throw new Error("Error al obtener datos del clima");
     const data = await response.json();
 
@@ -104,7 +104,7 @@ const fetchWeatherData = async () => {
 
 const fetchHumidity = async () => {
   try {
-    const response = await fetch("http://localhost:8000/humidity");
+    const response = await fetch("http://35.187.77.55:8000/humidity");
     console.log(response);
     if (!response.ok) throw new Error("Error al obtener datos de humedad");
     const data = await response.json();

@@ -140,7 +140,7 @@ export default {
         datos[param.name] = param.value;
       });
 
-      const respuesta = await fetch("http://localhost:8000/predict/", {
+      const respuesta = await fetch("http://35.187.77.55:8000/predict/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

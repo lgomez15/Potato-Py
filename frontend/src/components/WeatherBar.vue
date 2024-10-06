@@ -131,7 +131,7 @@ export default {
       this.error = null;
 
       try {
-        const apiUrl = `http://127.0.0.1:8000/weather/week/${encodeURIComponent(this.datetime)}/${this.latitude},${this.longitude}`;
+        const apiUrl = `http://35.187.77.55:8000/weather/week/${encodeURIComponent(this.datetime)}/${this.latitude},${this.longitude}`;
         const response = await axios.get(apiUrl);
 
         if (!response.data || !Array.isArray(response.data.data)) {
