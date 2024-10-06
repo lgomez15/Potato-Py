@@ -204,7 +204,8 @@ def createArraySensors(num_sensors: List[Sensor]):
     for i in range(num_baja_humedad):
         sensor = Sensor(
             id=i,
-            humedadDetectada=round(float(random.uniform(0, 25)), 2)
+            humedadDetectada=round(float(random.uniform(0, 25)), 2),
+            name=f"Sensor {i}"
         )
         sensors.append(sensor)
 
@@ -212,7 +213,8 @@ def createArraySensors(num_sensors: List[Sensor]):
     for i in range(num_baja_humedad, num_baja_humedad + num_media_humedad):
         sensor = Sensor(
             id=i,
-            humedadDetectada=round(float(random.uniform(25, 75)), 2)
+            humedadDetectada=round(float(random.uniform(25, 75)), 2),
+            name=f"Sensor {i}"
         )
         sensors.append(sensor)
 
@@ -220,7 +222,8 @@ def createArraySensors(num_sensors: List[Sensor]):
     for i in range(num_baja_humedad + num_media_humedad, num_sensors):
         sensor = Sensor(
             id=i,
-            humedadDetectada=round(float(random.uniform(75, 100)), 2)
+            humedadDetectada=round(float(random.uniform(75, 100)), 2),
+            name=f"Sensor {i}"
         )
         sensors.append(sensor)
 
