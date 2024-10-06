@@ -39,7 +39,7 @@
   
   <script>
   export default {
-    name: 'SensorMatrix',
+    name: 'SensorsView',
     data() {
       return {
         sensors: [],
@@ -55,7 +55,7 @@
     },
     mounted() {
       this.fetchSensorData();
-      setInterval(this.fetchSensorData, 10000); // Actualiza cada 10 segundos
+      setInterval(this.fetchSensorData, 2000); // Actualiza cada 2 segundos
     },
     computed: {
       moderateAlerts() {
@@ -99,7 +99,7 @@
         } else if (humidity >= 25 && humidity <= 75) {
           return '#FFD3B6'; // Amarillo pastel
         } else {
-          return '#FFAAA5'; // Rojo pastel
+          return '#FF8A80'; // Rojo pastel
         }
       },
       showTooltip(sensor, event) {
