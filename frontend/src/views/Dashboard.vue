@@ -30,7 +30,6 @@
     <p v-if="error" class="error-message">{{ error }}</p>
 
     <!-- Barra del tiempo -->
-<<<<<<< HEAD
     <div v-if="latitude !== null && longitude !== null">
       <WeatherBar
         :datetime="datetime"
@@ -39,15 +38,6 @@
         :city="selectedCity"
       />
     </div>
-=======
-    <WeatherBar
-      :datetime="datetime" 
-      :latitude="latitude !== null ? latitude : 0" 
-      :longitude="longitude !== null ? longitude : 0" 
-      :city="selectedCity"
-    />
->>>>>>> origin/backend
-
 
     <!-- Panel de control -->
     <div v-if="latitude !== null && longitude !== null">

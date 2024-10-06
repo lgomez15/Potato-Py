@@ -273,9 +273,9 @@ def sendSensors():
 
 # Función para clasificar el resultado
 def clasificar_crecimiento(prediccion):
-    if prediccion < 20:
+    if prediccion < 30:
         return "bajo"
-    elif 20 <= prediccion <= 40:
+    elif 30 <= prediccion <= 35:
         return "medio"
     else:
         return "alto"

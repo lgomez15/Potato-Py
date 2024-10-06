@@ -9,8 +9,9 @@
       <span></span>
     </label>
     <ul class="navbar-links">
-      <li><router-link to="/">Inicio</router-link></li>
-      <li><router-link to="/performance">Modelo de Rendimiento</router-link></li>
+      <li><router-link to="/">Dashboard</router-link></li>
+      <li><router-link to="/performance">Performance Model</router-link></li>
+      <li><router-link to="/sensor">Sensor View</router-link></li>
       <!-- Agrega más enlaces si es necesario -->
     </ul>
   </nav>

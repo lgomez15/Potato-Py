@@ -40,12 +40,6 @@
       </div>
     </div>
 
-    <div class="humidity-monitor" :class="humidityClass">
-      <h2>Humedad del Suelo</h2>
-      <p v-if="loading">Cargando...</p>
-      <p v-else-if="error">{{ error }}</p>
-      <p v-else>Humedad actual: {{ humidity !== null ? humidity + '%' : '---' }}</p>
-    </div>
   </div>
 </template>
 
@@ -111,6 +105,7 @@ const fetchWeatherData = async () => {
 const fetchHumidity = async () => {
   try {
     const response = await fetch("http://localhost:8000/humidity");
+    console.log(response);
     if (!response.ok) throw new Error("Error al obtener datos de humedad");
     const data = await response.json();
     humidity.value = data.humidity;

@@ -21,11 +21,61 @@
     <div v-if="resultado" class="result-container">
       <h3>Predicción: {{ resultado.predicted_stem_growth }}</h3>
       <h4>Categoría: {{ resultado.categoria }}</h4>
+
+      <!-- Contenedor de la animación -->
+      <div class="animation-container">
+        <svg
+          ref="plantSvg"
+          id="plant-svg"
+          viewBox="0 0 200 200"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <!-- Tallo -->
+          <rect
+            id="stem"
+            x="95"
+            y="100"
+            width="10"
+            height="0"
+            fill="#8B5A2B"
+          />
+          <!-- Hoja izquierda -->
+          <path
+            id="left-leaf"
+            d="M95 150 Q70 130 95 110"
+            fill="green"
+            opacity="0"
+          />
+          <!-- Hoja derecha -->
+          <path
+            id="right-leaf"
+            d="M105 150 Q130 130 105 110"
+            fill="green"
+            opacity="0"
+          />
+          <!-- Fruto -->
+          <circle
+            id="fruit"
+            cx="100"
+            cy="90"
+            r="0"
+            fill="red"
+            opacity="0"
+          />
+        </svg>
+      </div>
+
+      <!-- Barra de progreso debajo de la animación -->
+      <div class="progress-bar">
+        <div class="progress-fill" :style="progressFillStyle"></div>
+      </div>
     </div>
   </div>
 </template>
 
 <script>
+import { gsap } from 'gsap';
+
 export default {
   data() {
     return {
@@ -46,6 +96,43 @@ export default {
       resultado: null,
     };
   },
+  computed: {
+    progressFillStyle() {
+      if (!this.resultado) return { width: '0%' };
+      let width = '0%';
+      let backgroundColor = '#4caf50'; // Color por defecto (verde)
+
+      switch (this.resultado.categoria.toLowerCase()) {
+        case 'alto':
+          width = '100%';
+          backgroundColor = 'green';
+          break;
+        case 'medio':
+          width = '66%';
+          backgroundColor = 'yellow';
+          break;
+        case 'bajo':
+          width = '33%';
+          backgroundColor = 'red';
+          break;
+        default:
+          width = '0%';
+      }
+
+      return {
+        width,
+        backgroundColor,
+        transition: 'width 1s ease-in-out',
+      };
+    },
+  },
+  watch: {
+    resultado(newVal) {
+      if (newVal) {
+        this.animatePlant(newVal.categoria.toLowerCase());
+      }
+    },
+  },
   methods: {
     async predecirCrecimiento() {
       const datos = {};
@@ -53,7 +140,7 @@ export default {
         datos[param.name] = param.value;
       });
 
-      const respuesta = await fetch("http://localhost:5515/predict/", {
+      const respuesta = await fetch("http://localhost:8000/predict/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -61,6 +148,34 @@ export default {
         body: JSON.stringify(datos),
       });
       this.resultado = await respuesta.json();
+    },
+    animatePlant(category) {
+      // Reinicia las animaciones anteriores
+      gsap.killTweensOf("*");
+      gsap.set("#stem", { height: 0, y: 100 });
+      gsap.set("#left-leaf", { opacity: 0 });
+      gsap.set("#right-leaf", { opacity: 0 });
+      gsap.set("#fruit", { r: 0, opacity: 0 });
+
+      if (category === 'alto') {
+        // Animación para alto rendimiento
+        gsap.to("#stem", { height: 100, y: 0, duration: 1 });
+        gsap.to("#left-leaf", { opacity: 1, duration: 1, delay: 1 });
+        gsap.to("#right-leaf", { opacity: 1, duration: 1, delay: 1 });
+        gsap.to("#fruit", { r: 10, opacity: 1, duration: 1, delay: 2 });
+      } else if (category === 'medio') {
+        // Animación para rendimiento medio
+        gsap.to("#stem", { height: 70, y: 30, duration: 1 });
+        gsap.to("#left-leaf", { opacity: 1, duration: 1, delay: 1 });
+        gsap.to("#right-leaf", { opacity: 0, duration: 0 });
+        gsap.to("#fruit", { r: 5, opacity: 1, duration: 1, delay: 2 });
+      } else if (category === 'bajo') {
+        // Animación para bajo rendimiento
+        gsap.to("#stem", { height: 40, y: 60, duration: 1 });
+        gsap.to("#left-leaf", { opacity: 0, duration: 0 });
+        gsap.to("#right-leaf", { opacity: 0, duration: 0 });
+        gsap.to("#fruit", { r: 0, opacity: 0, duration: 0 });
+      }
     },
   },
 };
@@ -176,7 +291,8 @@ h2 {
   text-align: center;
 }
 
-.result-container h3, .result-container h4 {
+.result-container h3,
+.result-container h4 {
   margin: 10px 0;
   color: var(--text-color);
 }
@@ -189,6 +305,35 @@ h2 {
 .result-container h4 {
   font-size: 1.5rem;
   color: var(--secondary-color);
+}
+
+/* Estilos para la animación */
+.animation-container {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+}
+
+#plant-svg {
+  width: 200px;
+  height: 200px;
+}
+
+/* Estilos para la barra de progreso */
+.progress-bar {
+  position: relative;
+  width: 100%;
+  height: 30px;
+  background-color: #e0e0e0;
+  border-radius: 15px;
+  overflow: hidden;
+  margin-top: 20px;
+}
+
+.progress-fill {
+  height: 100%;
+  width: 0;
+  background-color: var(--primary-color);
 }
 
 /* Responsividad */
