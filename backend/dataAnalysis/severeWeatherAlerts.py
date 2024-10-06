@@ -7,6 +7,7 @@ def get_severe_weather_alerts(latitude, longitude):
     geocoder = OpenCageGeocode(opencage_api_key)
 
     alert_message = "No severe weather alerts found."
+    alert = False
 
     result = geocoder.reverse_geocode(latitude, longitude)
     if result and len(result):
@@ -25,6 +26,7 @@ def get_severe_weather_alerts(latitude, longitude):
             if data['features']:
                 properties = data['features'][0]['properties']['parameters']
                 nws_headline = properties.get('NWSheadline', 'No headline')
+                alert = True
                 alert_message = "There are severe weather alerts in your area. Please take caution. Alert: " + \
                     str(nws_headline[0])
             else:
@@ -34,5 +36,5 @@ def get_severe_weather_alerts(latitude, longitude):
     else:
         print("No address found for the given coordinates.")
 
-    return alert_message
+    return alert, alert_message
                     

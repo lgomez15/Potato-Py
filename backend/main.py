@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from pydantic.fields import Field
 from datetime import datetime, timedelta
 from typing import List
+from dataAnalysis.severeWeatherAlerts import get_severe_weather_alerts
 import joblib
 import random, time
 import numpy as np
@@ -53,9 +54,6 @@ class PlantData(BaseModel):
     humidity_mean: float
     humidity_min: float
     humidity_max: float
-
-# Variable para almacenar la humedad anterior
-previous_humidity = None
 
 async def petitions(url, request):
     # Autenticación para la API
@@ -192,6 +190,12 @@ async def getTemperatureWeek(datetime: str, latitude: float, longitude: float):
     #Construir la peticion para los datos de la semana
     url = f"{API_URL}/{request.datetime.isoformat()}--{fechaSemana.isoformat()}:P1D/{request.data_type}/{request.latitude},{request.longitude}/{request.response_format}"
     return await petitions(url, request)
+
+@app.get("/weather/alert/{latitude},{longitude}")
+async def getWeatherAlert(latitude: float, longitude: float):
+    # Obtener las alertas de clima severo
+    alert, alert_message = get_severe_weather_alerts(latitude, longitude)
+    return {"alert": alert, "alert_message": alert_message}
 
 
 def createArraySensors(num_sensors: List[Sensor]):
