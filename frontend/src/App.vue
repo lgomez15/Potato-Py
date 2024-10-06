@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import { RouterView } from 'vue-router';
 import Navbar from './components/Navbar.vue';
 import Chat from './components/Chat.vue';
+import Footer from './components/Footer.vue';
 
 // Controlamos la visibilidad del chat
 const isChatOpen = ref(false);
@@ -29,6 +30,7 @@ const toggleChat = () => {
       <!-- Botón para cerrar el chat dentro de la ventana emergente -->
       <button class="close-button" @click="toggleChat"><i class="fas fa-times"></i></button>
     </div>
+    <Footer></Footer>
   </div>
 </template>
 

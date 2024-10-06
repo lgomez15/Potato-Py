@@ -1,7 +1,8 @@
-<!-- Chat.vue -->
 <template>
   <div class="chat-container">
     <div class="chat-header">
+      <!-- Botón con icono de papelera para limpiar el chat -->
+      <button class="clear-chat-button" @click="clearChat">🗑️</button>
       <h2>Asistente Virtual</h2>
     </div>
     <div class="chat-window" ref="chatWindow">
@@ -39,23 +40,36 @@ export default {
   data() {
     return {
       userInput: '',
-      messages: [],
+      messages: [], // Mantén un estado inicial vacío
       loading: false,
       error: null,
     };
+  },
+  mounted() {
+    // Cargar mensajes guardados de localStorage si existen
+    const savedMessages = localStorage.getItem('chatMessages');
+    if (savedMessages) {
+      this.messages = JSON.parse(savedMessages);
+      this.$nextTick(() => {
+        this.scrollToBottom();
+      });
+    }
   },
   methods: {
     async sendMessage() {
       const question = this.userInput.trim();
       if (question === '') return;
 
-      // Agrega el mensaje del usuario a la conversación
+      // Agregar el mensaje del usuario a la conversación
       this.messages.push({ sender: 'user', text: question });
 
-      // Limpia el input y muestra el indicador de carga
+      // Limpiar el input y mostrar el indicador de carga
       this.userInput = '';
       this.loading = true;
       this.error = null;
+
+      // Guardar en localStorage
+      this.saveMessages();
 
       // Desplazar hacia abajo
       this.$nextTick(() => {
@@ -63,10 +77,14 @@ export default {
       });
 
       try {
-        // Obtiene la respuesta de ChatGPT
+        // Obtener la respuesta de ChatGPT
         const response = await getChatResponse(question);
-        // Agrega la respuesta de ChatGPT a la conversación
+        // Agregar la respuesta de ChatGPT a la conversación
         this.messages.push({ sender: 'gpt', text: response });
+
+        // Guardar en localStorage
+        this.saveMessages();
+
         this.$nextTick(() => {
           this.scrollToBottom();
         });
@@ -78,13 +96,42 @@ export default {
     },
     scrollToBottom() {
       const chatWindow = this.$refs.chatWindow;
-      chatWindow.scrollTop = chatWindow.scrollHeight;
+      if (chatWindow) {
+        chatWindow.scroll({
+          top: chatWindow.scrollHeight,
+          behavior: 'smooth',
+        });
+      }
     },
+    saveMessages() {
+      // Guardar los mensajes en localStorage
+      localStorage.setItem('chatMessages', JSON.stringify(this.messages));
+    },
+     clearChat() {
+      // Limpiar el array de mensajes y localStorage
+      this.messages = [];
+      localStorage.removeItem('chatMessages');
+    }
   },
+  
 };
 </script>
 
 <style scoped>
+.clear-chat-button {
+  background-color: transparent; /* Fondo transparente para el botón */
+  color: #f44336; /* Color rojo del ícono */
+  border: none;
+  font-size: 24px; /* Tamaño del ícono */
+  cursor: pointer;
+  position: absolute; /* Posicionamos el botón de manera absoluta */
+  top: 10px; /* Alineado en la parte superior */
+  left: 10px; /* Alineado en la parte izquierda */
+}
+
+.clear-chat-button:hover {
+  background-color: #d32f2f; /* Color rojo más oscuro al pasar el ratón */
+}
 .chat-container {
   display: flex;
   flex-direction: column;
@@ -111,6 +158,7 @@ export default {
   padding: 15px;
   overflow-y: auto;
   background-color: #f5f5f5;
+  max-height: 400px; /* Limitar el alto máximo */
 }
 
 .message {
@@ -128,7 +176,7 @@ export default {
 }
 
 .message.gpt {
-  background-color: #fff;
+  background-color: #fffccc;
   border: 1px solid #e0e0e0;
   align-self: flex-start;
 }
@@ -177,5 +225,19 @@ export default {
   color: red;
   margin: 10px;
   text-align: center;
+}
+
+/* Media query para pantallas pequeñas */
+@media (max-width: 600px) {
+  .chat-container {
+    width: 100%;
+    padding: 0;
+  }
+  .chat-header h2 {
+    font-size: 1.2rem;
+  }
+  .message {
+    max-width: 90%;
+  }
 }
 </style>

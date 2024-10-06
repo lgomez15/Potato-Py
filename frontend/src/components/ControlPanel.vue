@@ -102,25 +102,11 @@ const fetchWeatherData = async () => {
   }
 };
 
-const fetchHumidity = async () => {
-  try {
-    const response = await fetch("http://35.187.77.55:8000/humidity");
-    console.log(response);
-    if (!response.ok) throw new Error("Error al obtener datos de humedad");
-    const data = await response.json();
-    humidity.value = data.humidity;
-  } catch (err) {
-    console.error("Error al obtener la humedad:", err);
-    error.value = "No se pudo cargar la humedad.";
-  } finally {
-    loading.value = false;
-  }
-};
+
 
 onMounted(() => {
   fetchWeatherData();
-  fetchHumidity();
-  setInterval(fetchHumidity, 1000); // Actualizar cada 10 segundos
+
 });
 
 watch(() => [props.latitude, props.longitude], () => {
