@@ -1,8 +1,18 @@
 <template>
   <div class="sensor-matrix-container">
-    <!-- Encabezado con el título y el botón "Simular Fallo" -->
+    <!-- Encabezado con el título, el input y el botón "Simular Fallo" -->
     <div class="header">
       <h2>Parcela</h2>
+      <div class="input-container">
+        <label for="sensorNumber">Número de Sensor:</label>
+        <input
+          type="number"
+          id="sensorNumber"
+          v-model.number="sensorNumber"
+          @input="validateSensorNumber"
+          min="9"
+        />
+      </div>
       <button @click="toggleDataSource">{{ buttonLabel }}</button>
     </div>
 
@@ -25,13 +35,13 @@
       <h3>Alertas Moderadas</h3>
       <ul>
         <li v-for="sensor in moderateAlerts" :key="sensor.id">
-          {{ sensor.name }}: {{ parseFloat(sensor.humedadDetectada.replace('%', '')).toFixed(1) }}%
+          {{ sensor.name }}: {{ formatHumidity(sensor.humedadDetectada) }}%
         </li>
       </ul>
       <h3>Alertas Altas</h3>
       <ul>
         <li v-for="sensor in highAlerts" :key="sensor.id">
-          {{ sensor.name }}: {{ parseFloat(sensor.humedadDetectada.replace('%', '')).toFixed(1) }}%
+          {{ sensor.name }}: {{ formatHumidity(sensor.humedadDetectada) }}%
         </li>
       </ul>
     </div>
@@ -63,6 +73,7 @@ export default {
       rows: 3, // Número de filas en la matriz
       columns: 3, // Número de columnas en la matriz
       dataSource: 'A', // 'A' para sensors, 'B' para sensorsB
+      sensorNumber: 9, // Número de sensor predeterminado
     };
   },
   mounted() {
@@ -74,14 +85,14 @@ export default {
   },
   computed: {
     moderateAlerts() {
-      return this.sensors.filter(sensor => {
-        const humidity = parseFloat(sensor.humedadDetectada.replace('%', ''));
+      return this.sensors.filter((sensor) => {
+        const humidity = this.parseHumidity(sensor.humedadDetectada);
         return humidity >= 25 && humidity <= 75;
       });
     },
     highAlerts() {
-      return this.sensors.filter(sensor => {
-        const humidity = parseFloat(sensor.humedadDetectada.replace('%', ''));
+      return this.sensors.filter((sensor) => {
+        const humidity = this.parseHumidity(sensor.humedadDetectada);
         return humidity < 25;
       });
     },
@@ -93,8 +104,8 @@ export default {
     async fetchSensorData() {
       const url =
         this.dataSource === 'A'
-          ? 'http://35.187.77.55:8000/sensorsG'
-          : 'http://35.187.77.55:8000/sensorsB';
+          ? `http://35.187.77.55:8000/sensorsG/${this.sensorNumber}`
+          : `http://35.187.77.55:8000/sensorsB/${this.sensorNumber}`;
       try {
         const response = await fetch(url);
         if (!response.ok) throw new Error('Error al obtener datos de los sensores');
@@ -113,7 +124,7 @@ export default {
       this.fetchSensorData();
     },
     getSensorStyle(humedad) {
-      const humidityValue = parseFloat(humedad.replace('%', ''));
+      const humidityValue = this.parseHumidity(humedad);
       const color = this.getColorByHumidity(humidityValue);
 
       return {
@@ -132,7 +143,7 @@ export default {
       }
     },
     showTooltip(sensor, event) {
-      const humidityValue = parseFloat(sensor.humedadDetectada.replace('%', '')).toFixed(1);
+      const humidityValue = this.parseHumidity(sensor.humedadDetectada).toFixed(1);
       this.tooltip.visible = true;
       this.tooltip.text = `${sensor.name}: ${humidityValue}%`;
       this.tooltip.style = {
@@ -142,6 +153,24 @@ export default {
     },
     hideTooltip() {
       this.tooltip.visible = false;
+    },
+    validateSensorNumber() {
+      if (this.sensorNumber < 9) {
+        this.sensorNumber = 9; // Valor mínimo
+      }
+      this.fetchSensorData(); // Actualiza los datos al cambiar el número
+    },
+    // Función para formatear la humedad y manejar diferentes tipos
+    formatHumidity(humedad) {
+      const humidityValue = this.parseHumidity(humedad);
+      return humidityValue.toFixed(1);
+    },
+    // Función para asegurar que la humedad siempre sea un número válido
+    parseHumidity(humedad) {
+      if (typeof humedad === 'string') {
+        return parseFloat(humedad.replace('%', '')) || 0;
+      }
+      return parseFloat(humedad) || 0;
     },
   },
 };
@@ -160,6 +189,13 @@ export default {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
+}
+
+.input-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-right: 20px;
 }
 
 .header h2 {

@@ -1,6 +1,11 @@
 <!-- Dashboard.vue -->
 <template>
   <div class="dashboard">
+    <!-- Banner de Alerta -->
+    <div v-if="alertData && alertData.alert" class="alert-banner">
+      <div class="scrolling-text">{{ alertData.alert_message }}</div>
+    </div>
+
     <div class="search-section">
       <input 
         type="text" 
@@ -51,7 +56,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import ControlPanel from '../components/ControlPanel.vue';
 import WeatherBar from '@/components/WeatherBar.vue';
 
@@ -63,6 +68,7 @@ const filteredCities = ref([]);
 const latitude = ref(null);
 const longitude = ref(null);
 const error = ref(null);
+const alertData = ref(null); // Nueva variable para los datos de alerta
 
 // Función para buscar ciudades
 const fetchCities = async () => {
@@ -118,6 +124,26 @@ const fetchCoordinates = async () => {
   }
 };
 
+// Función para obtener los datos de alerta
+const fetchAlertData = async () => {
+  if (latitude.value !== null && longitude.value !== null) {
+    const alertUrl = `http://35.187.77.55:8000/alert/${latitude.value},${longitude.value}`;
+    try {
+      const response = await fetch(alertUrl);
+      if (!response.ok) throw new Error('Error en la respuesta de la API de alertas');
+      const data = await response.json();
+      alertData.value = data;
+    } catch (error) {
+      console.error('Error al obtener datos de alerta:', error);
+    }
+  }
+};
+
+// Observar cambios en latitude y longitude para actualizar las alertas
+watch([latitude, longitude], () => {
+  fetchAlertData();
+});
+
 onMounted(() => {
   selectedCity.value = 'Salamanca';
   cityInput.value = 'Salamanca, ES';
@@ -130,6 +156,34 @@ onMounted(() => {
   max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
+}
+
+/* Estilos para el banner de alerta */
+.alert-banner {
+  background-color: #e74c3c; /* Color de fondo rojo */
+  color: white;
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+  height: 50px;
+  display: flex;
+  align-items: center;
+}
+
+.scrolling-text {
+  position: absolute;
+  white-space: nowrap;
+  will-change: transform;
+  animation: scroll-text 10s linear infinite;
+}
+
+@keyframes scroll-text {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
 }
 
 .search-section {
